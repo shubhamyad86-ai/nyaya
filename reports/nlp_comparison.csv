@@ -1,0 +1,2 @@
+method,model,accuracy,macro_f1,weighted_f1,latency_ms_per_sentence,f1_negative,f1_neutral,f1_positive,train_seconds,run_at,mlflow_run_id
+tfidf_baseline,tfidf,0.8638,0.8211,0.8604,0.141,0.7671,0.9091,0.7872,2.1475,2026-10-11T20:04:15+00:00,35f69ba2f0c84c46b478ab10cbcb60f2

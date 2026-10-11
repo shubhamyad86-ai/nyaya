@@ -1,0 +1,4 @@
+# Transformer models for financial sentiment (PyTorch + Hugging Face).
+# On Windows/macOS this installs the CPU build of PyTorch. Google Colab already has torch.
+torch>=2.2
+transformers>=4.44

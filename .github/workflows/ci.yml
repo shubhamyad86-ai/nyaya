@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - uses: actions/setup-java@v4      # for the PySpark pipeline tests
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements-dev.txt
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers
+          pip install -e .
+
+      - name: Lint
+        run: ruff check src tests spark scripts deploy notebooks/databricks_credit_pipeline.py
+
+      - name: Download real data
+        run: python scripts/download_data.py
+
+      - name: Train credit model (MLflow tracked)
+        run: PYTHONPATH=src python -m compliance_ai.credit.train
+
+      - name: Build offline RAG index and evaluate retrieval
+        run: |
+          PYTHONPATH=src python -m compliance_ai.rag.build_index --backend tfidf
+          PYTHONPATH=src python -m compliance_ai.rag.evaluate
+
+      - name: Train financial-sentiment baseline
+        run: python -m compliance_ai.nlp.train --method tfidf_baseline
+
+      - name: Tests
+        run: pytest -q
+
+      - name: Delta Lake pipeline
+        run: python spark/credit_pipeline.py --format delta --base-path /tmp/lake
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports/

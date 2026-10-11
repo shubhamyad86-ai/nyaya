@@ -1,0 +1,42 @@
+[
+  {
+    "text": "F-Secure reported that : - The first half of 2008 has seen a growing number of targeted malware attacks on individuals , companies , and organizations .",
+    "label": "neutral",
+    "predicted": "negative"
+  },
+  {
+    "text": "The sale will result in a capital loss of EUR5m for Solidium , which obtained Tikkurila shares in March 2010 .",
+    "label": "negative",
+    "predicted": "neutral"
+  },
+  {
+    "text": "Fiskars , the World 's  1 Scissors Brand TM , recently won Learning -\u00ab Magazine 's 2011 Teachers ' Choice Award for the Classroom .",
+    "label": "positive",
+    "predicted": "neutral"
+  },
+  {
+    "text": "Nokia Messaging 1.1 enables customers to receive e-mails from up to 10 e-mail accounts on their mobile phone supporting all POP or IMAP e-mail services .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "In a note to clients published , the Dutch broker described the company 's third quarter results as ` soft ' , although it also noted that Elcoteq retained its guidance , dealers said .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "According to the company , in addition to normal seasonal fluctuation the market situation has weakened during autumn 2008 .",
+    "label": "negative",
+    "predicted": "neutral"
+  },
+  {
+    "text": "The hosting mobile terminal guides information flow between itself , the participating terminals , and optionally , with network servers that may assist the hosting mobile terminal .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Tiimari operates 194 stores in six countries -- including its core Finnish market -- and generated a turnover of 76.5 mln eur in 2005 .",
+    "label": "neutral",
+    "predicted": "positive"
+  }
+]

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compliance-ai"
+version = "1.0.0"
+description = "Explainable credit-risk ML with fairness auditing and a grounded GDPR RAG assistant"
+authors = [{ name = "Shubham Yadav" }]
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "spark"]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::bs4.XMLParsedAsHTMLWarning",
+    "ignore::UserWarning",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E402"]
+
+[tool.ruff.lint.per-file-ignores]
+# Databricks provides spark, dbutils and display at runtime.
+"notebooks/*.py" = ["F821"]
+# Markdown templates read better unwrapped.
+"scripts/update_docs.py" = ["E501"]

@@ -1,0 +1,345 @@
+{
+  "generated_at": "2026-10-11T19:45:57+00:00",
+  "data": {
+    "rows": 1000,
+    "default_rate": 0.3,
+    "features_numeric": [
+      "duration",
+      "amount",
+      "installment_rate",
+      "present_residence",
+      "number_credits",
+      "people_liable",
+      "amount_per_month",
+      "has_checking_account",
+      "no_savings",
+      "delayed_before"
+    ],
+    "features_categorical": [
+      "status",
+      "credit_history",
+      "purpose",
+      "savings",
+      "employment_duration",
+      "other_debtors",
+      "property",
+      "other_installment_plans",
+      "housing",
+      "job",
+      "telephone"
+    ],
+    "protected_audit_only": [
+      "sex",
+      "age_group",
+      "foreign_worker"
+    ]
+  },
+  "selected_model": "xgboost",
+  "cv_comparison": [
+    {
+      "model": "xgboost",
+      "cv_roc_auc_mean": 0.7954,
+      "cv_roc_auc_std": 0.0313,
+      "cv_pr_auc_mean": 0.6146,
+      "cv_brier_mean": 0.1749,
+      "oof_best_threshold": 0.19,
+      "oof_expected_cost": 0.4862
+    },
+    {
+      "model": "gradient_boosting",
+      "cv_roc_auc_mean": 0.7903,
+      "cv_roc_auc_std": 0.0288,
+      "cv_pr_auc_mean": 0.5994,
+      "cv_brier_mean": 0.1665,
+      "oof_best_threshold": 0.16,
+      "oof_expected_cost": 0.505
+    },
+    {
+      "model": "logistic_regression",
+      "cv_roc_auc_mean": 0.7651,
+      "cv_roc_auc_std": 0.0585,
+      "cv_pr_auc_mean": 0.595,
+      "cv_brier_mean": 0.197,
+      "oof_best_threshold": 0.27,
+      "oof_expected_cost": 0.51
+    },
+    {
+      "model": "random_forest",
+      "cv_roc_auc_mean": 0.7937,
+      "cv_roc_auc_std": 0.052,
+      "cv_pr_auc_mean": 0.6433,
+      "cv_brier_mean": 0.1695,
+      "oof_best_threshold": 0.27,
+      "oof_expected_cost": 0.5262
+    }
+  ],
+  "test": {
+    "roc_auc": 0.7908,
+    "pr_auc": 0.6706,
+    "brier": 0.1698,
+    "threshold": 0.19,
+    "expected_cost": 0.645,
+    "recall_defaulters": 0.8333,
+    "precision_defaulters": 0.3876,
+    "f1_defaulters": 0.5291,
+    "approval_rate": 0.355,
+    "confusion": {
+      "tn": 61,
+      "fp": 79,
+      "fn": 10,
+      "tp": 50
+    },
+    "cost_approve_everyone": 1.5,
+    "cost_reject_everyone": 0.7,
+    "cost_default_threshold_0_5": 0.585
+  },
+  "fairness_test": {
+    "sex": {
+      "groups": [
+        {
+          "group": "female",
+          "n": 61,
+          "actual_default_rate": 0.3279,
+          "approval_rate": 0.3279,
+          "approval_rate_if_repaid": 0.4146,
+          "approval_rate_if_defaulted": 0.15,
+          "disparate_impact_ratio": 0.8936
+        },
+        {
+          "group": "male",
+          "n": 139,
+          "actual_default_rate": 0.2878,
+          "approval_rate": 0.3669,
+          "approval_rate_if_repaid": 0.4444,
+          "approval_rate_if_defaulted": 0.175,
+          "disparate_impact_ratio": 1.0
+        }
+      ],
+      "demographic_parity_difference": 0.03903762236112751,
+      "equal_opportunity_difference": 0.029810298102981025,
+      "min_disparate_impact_ratio": 0.8936033429765349,
+      "passes_four_fifths_rule": true
+    },
+    "age_group": {
+      "groups": [
+        {
+          "group": "25_plus",
+          "n": 161,
+          "actual_default_rate": 0.2547,
+          "approval_rate": 0.3851,
+          "approval_rate_if_repaid": 0.45,
+          "approval_rate_if_defaulted": 0.1951,
+          "disparate_impact_ratio": 1.0
+        },
+        {
+          "group": "under_25",
+          "n": 39,
+          "actual_default_rate": 0.4872,
+          "approval_rate": 0.2308,
+          "approval_rate_if_repaid": 0.35,
+          "approval_rate_if_defaulted": 0.1053,
+          "disparate_impact_ratio": 0.5993
+        }
+      ],
+      "demographic_parity_difference": 0.15432393693263258,
+      "equal_opportunity_difference": 0.10000000000000003,
+      "min_disparate_impact_ratio": 0.5992555831265509,
+      "passes_four_fifths_rule": false
+    },
+    "foreign_worker": {
+      "groups": [
+        {
+          "group": "no",
+          "n": 6,
+          "actual_default_rate": 0.1667,
+          "approval_rate": 0.5,
+          "approval_rate_if_repaid": 0.6,
+          "approval_rate_if_defaulted": 0.0,
+          "disparate_impact_ratio": 1.0
+        },
+        {
+          "group": "yes",
+          "n": 194,
+          "actual_default_rate": 0.3041,
+          "approval_rate": 0.3505,
+          "approval_rate_if_repaid": 0.4296,
+          "approval_rate_if_defaulted": 0.1695,
+          "disparate_impact_ratio": 0.701
+        }
+      ],
+      "demographic_parity_difference": 0.14948453608247425,
+      "equal_opportunity_difference": 0.17037037037037034,
+      "min_disparate_impact_ratio": 0.7010309278350515,
+      "passes_four_fifths_rule": false
+    }
+  },
+  "fairness_out_of_fold": {
+    "sex": {
+      "groups": [
+        {
+          "group": "female",
+          "n": 249,
+          "actual_default_rate": 0.3574,
+          "approval_rate": 0.3293,
+          "approval_rate_if_repaid": 0.4625,
+          "approval_rate_if_defaulted": 0.0899,
+          "disparate_impact_ratio": 0.844
+        },
+        {
+          "group": "male",
+          "n": 551,
+          "actual_default_rate": 0.274,
+          "approval_rate": 0.3902,
+          "approval_rate_if_repaid": 0.505,
+          "approval_rate_if_defaulted": 0.0861,
+          "disparate_impact_ratio": 1.0
+        }
+      ],
+      "demographic_parity_difference": 0.06088236794728824,
+      "equal_opportunity_difference": 0.04249999999999998,
+      "min_disparate_impact_ratio": 0.8439712337722985,
+      "passes_four_fifths_rule": true
+    },
+    "age_group": {
+      "groups": [
+        {
+          "group": "25_plus",
+          "n": 690,
+          "actual_default_rate": 0.287,
+          "approval_rate": 0.4,
+          "approval_rate_if_repaid": 0.5224,
+          "approval_rate_if_defaulted": 0.096,
+          "disparate_impact_ratio": 1.0
+        },
+        {
+          "group": "under_25",
+          "n": 110,
+          "actual_default_rate": 0.3818,
+          "approval_rate": 0.1909,
+          "approval_rate_if_repaid": 0.2794,
+          "approval_rate_if_defaulted": 0.0476,
+          "disparate_impact_ratio": 0.4773
+        }
+      ],
+      "demographic_parity_difference": 0.2090909090909091,
+      "equal_opportunity_difference": 0.2429459588713534,
+      "min_disparate_impact_ratio": 0.4772727272727273,
+      "passes_four_fifths_rule": false
+    },
+    "foreign_worker": {
+      "groups": [
+        {
+          "group": "no",
+          "n": 31,
+          "actual_default_rate": 0.0968,
+          "approval_rate": 0.5806,
+          "approval_rate_if_repaid": 0.6429,
+          "approval_rate_if_defaulted": 0.0,
+          "disparate_impact_ratio": 1.0
+        },
+        {
+          "group": "yes",
+          "n": 769,
+          "actual_default_rate": 0.3082,
+          "approval_rate": 0.3628,
+          "approval_rate_if_repaid": 0.485,
+          "approval_rate_if_defaulted": 0.0886,
+          "disparate_impact_ratio": 0.6248
+        }
+      ],
+      "demographic_parity_difference": 0.21783631863752678,
+      "equal_opportunity_difference": 0.1578947368421053,
+      "min_disparate_impact_ratio": 0.6248374512353706,
+      "passes_four_fifths_rule": false
+    }
+  },
+  "fairness_mitigation": {
+    "experiment": "production model (no age feature) vs the same model with age added (out-of-fold)",
+    "with_age": {
+      "roc_auc": 0.788861607142857,
+      "expected_cost": 0.50875,
+      "age_min_disparate_impact": 0.42288049029622066
+    },
+    "without_age": {
+      "roc_auc": 0.7953869047619048,
+      "expected_cost": 0.48625,
+      "age_min_disparate_impact": 0.4772727272727273
+    }
+  },
+  "explanation_example": {
+    "applicant_index": 11,
+    "p_default": 0.9623928666114807,
+    "decision": "reject",
+    "reasons": [
+      {
+        "feature": "amount",
+        "value": 4308,
+        "impact": 0.5857,
+        "direction": "increases risk"
+      },
+      {
+        "feature": "housing",
+        "value": "rent",
+        "impact": 0.4718,
+        "direction": "increases risk"
+      },
+      {
+        "feature": "employment_duration",
+        "value": "... < 1 year",
+        "impact": 0.4626,
+        "direction": "increases risk"
+      },
+      {
+        "feature": "duration",
+        "value": 48,
+        "impact": 0.4256,
+        "direction": "increases risk"
+      }
+    ]
+  },
+  "top_features": {
+    "has_checking_account": 0.5069000124931335,
+    "amount": 0.3995000123977661,
+    "amount_per_month": 0.3580999970436096,
+    "duration": 0.35350000858306885,
+    "credit_history": 0.3100999891757965,
+    "purpose": 0.27810001373291016,
+    "status": 0.24860000610351562,
+    "employment_duration": 0.21619999408721924
+  },
+  "segmentation": {
+    "silhouette_by_k": {
+      "2": 0.30423404501745044,
+      "3": 0.23701334806841054,
+      "4": 0.23322191397027017,
+      "5": 0.24473673379593675,
+      "6": 0.23746763117283654
+    },
+    "best_k": 2,
+    "profile": [
+      {
+        "segment": 0,
+        "n": 234,
+        "default_rate": 0.423,
+        "median_amount": 6711.5,
+        "median_duration": 36.0,
+        "median_age": 34.0
+      },
+      {
+        "segment": 1,
+        "n": 766,
+        "default_rate": 0.262,
+        "median_amount": 1843.5,
+        "median_duration": 15.0,
+        "median_age": 33.0
+      }
+    ]
+  },
+  "anomalies": {
+    "n_flagged": 30,
+    "default_rate_flagged": 0.5666666666666667,
+    "default_rate_not_flagged": 0.29175257731958765,
+    "median_amount_flagged": 12069.5
+  },
+  "mlflow_run_id": "6f3574421f26434eb812ecd0c9dace82"
+}

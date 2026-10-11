@@ -1,0 +1,10 @@
+.venv
+venv
+mlflow.db
+mlruns
+models
+data/delta
+**/__pycache__
+.pytest_cache
+deploy/azure_function/compliance_ai
+deploy/azure_function/models

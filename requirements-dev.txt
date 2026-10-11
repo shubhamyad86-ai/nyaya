@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest>=8.0
+httpx>=0.27
+ruff>=0.6
+# Local Spark/Delta pipeline (needs Java 11+; Databricks already provides these)
+pyspark>=3.5,<4
+delta-spark>=3.2,<4

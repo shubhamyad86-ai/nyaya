@@ -1,0 +1,3 @@
+# Semantic embeddings for the RAG index (pulls PyTorch; downloads the model on first use)
+langchain-huggingface>=0.1
+sentence-transformers>=3.0

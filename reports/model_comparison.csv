@@ -1,0 +1,5 @@
+model,cv_roc_auc_mean,cv_roc_auc_std,cv_pr_auc_mean,cv_brier_mean,oof_best_threshold,oof_expected_cost
+xgboost,0.7954,0.0313,0.6146,0.1749,0.19,0.4862
+gradient_boosting,0.7903,0.0288,0.5994,0.1665,0.16,0.505
+logistic_regression,0.7651,0.0585,0.595,0.197,0.27,0.51
+random_forest,0.7937,0.052,0.6433,0.1695,0.27,0.5262

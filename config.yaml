@@ -1,0 +1,51 @@
+# Central configuration for the Compliance AI project.
+# Every path is relative to the project root.
+
+seed: 42
+
+credit:
+  data_path: data/raw/german_credit.csv
+  target: credit_risk          # 1 = good credit, 0 = bad credit (default)
+  # Protected attributes are NEVER used as model inputs.
+  # They are kept only to audit the model for fairness.
+  protected: [sex, age_group, foreign_worker]
+  # Age is excluded deliberately (fairness, see docs/MODEL_CARD.md); log_amount duplicates amount.
+  drop_from_features: [personal_status_sex, foreign_worker, age, log_amount]
+  cv_folds: 5
+  # Statlog cost matrix: approving a bad applicant costs 5x
+  # more than rejecting a good one.
+  cost_false_approval: 5
+  cost_false_rejection: 1
+  model_dir: models
+  report_dir: reports
+  mlflow_experiment: credit-risk
+
+nlp:
+  data_path: data/finance_text/Sentences_75Agree.txt
+  labels: [negative, neutral, positive]
+  test_size: 0.2
+  val_size: 0.1               # of the training part, for early stopping
+  model_dir: models/sentiment
+  mlflow_experiment: financial-sentiment
+  # Not FinBERT: FinBERT was trained on this very dataset, so its scores here would be inflated.
+  transformer_model: distilbert-base-uncased
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  max_length: 64
+  epochs: 4
+  batch_size: 16
+  learning_rate: 3.0e-5
+
+rag:
+  corpus_dir: data/regulations
+  index_dir: models/rag_index
+  chunk_size: 1200
+  chunk_overlap: 150
+  top_k: 4
+  # "huggingface" uses sentence-transformers (needs internet once to download the model).
+  # "tfidf" is a fully offline fallback used in CI.
+  embedding_backend: huggingface
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  # "ollama" (local, free), "azure" (Azure OpenAI) or "none" (retrieval only).
+  llm_provider: ollama
+  ollama_model: llama3.1:8b
+  eval_path: eval/regulation_retrieval_eval.jsonl

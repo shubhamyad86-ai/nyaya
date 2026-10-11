@@ -1,0 +1,22 @@
+# Core: credit-risk ML, MLflow, RAG (offline TF-IDF embeddings), LLM clients, API
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+xgboost>=2.1
+shap>=0.46
+matplotlib>=3.8
+mlflow>=2.16
+pyyaml>=6.0
+joblib>=1.4
+langchain-core>=0.3
+langchain-community>=0.3
+langchain-text-splitters>=0.3
+langchain-ollama>=0.2
+langchain-openai>=0.2
+faiss-cpu>=1.8
+beautifulsoup4>=4.12
+lxml>=5.0
+pypdf>=4.0
+azure-functions>=1.20
+fastapi>=0.110
+uvicorn[standard]>=0.29

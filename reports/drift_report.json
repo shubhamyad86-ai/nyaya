@@ -1,0 +1,584 @@
+{
+  "Held-out test set (same population)": {
+    "n_current": 200,
+    "n_reference": 800,
+    "features": [
+      {
+        "feature": "purpose",
+        "psi": 0.0727,
+        "p_value": 0.0034,
+        "status": "stable",
+        "largest_change": "domestic appliances",
+        "share_reference": 0.269,
+        "share_current": 0.325
+      },
+      {
+        "feature": "employment_duration",
+        "psi": 0.0477,
+        "p_value": 0.0115,
+        "status": "stable",
+        "largest_change": "unemployed",
+        "share_reference": 0.051,
+        "share_current": 0.105
+      },
+      {
+        "feature": "amount_per_month",
+        "psi": 0.0451,
+        "p_value": 0.4846,
+        "status": "stable",
+        "reference_mean": 162.541,
+        "current_mean": 188.27
+      },
+      {
+        "feature": "amount",
+        "psi": 0.0405,
+        "p_value": 0.5852,
+        "status": "stable",
+        "reference_mean": 3189.591,
+        "current_mean": 3597.925
+      },
+      {
+        "feature": "savings",
+        "psi": 0.037,
+        "p_value": 0.1968,
+        "status": "stable",
+        "largest_change": "100 <= ... < 500 DM",
+        "share_reference": 0.113,
+        "share_current": 0.065
+      },
+      {
+        "feature": "other_debtors",
+        "psi": 0.0159,
+        "p_value": 0.1396,
+        "status": "stable",
+        "largest_change": "guarantor",
+        "share_reference": 0.046,
+        "share_current": 0.075
+      },
+      {
+        "feature": "installment_rate",
+        "psi": 0.0144,
+        "p_value": 0.2582,
+        "status": "stable",
+        "reference_mean": 2.941,
+        "current_mean": 3.1
+      },
+      {
+        "feature": "present_residence",
+        "psi": 0.0138,
+        "p_value": 0.2956,
+        "status": "stable",
+        "reference_mean": 2.83,
+        "current_mean": 2.905
+      },
+      {
+        "feature": "credit_history",
+        "psi": 0.0138,
+        "p_value": 0.6099,
+        "status": "stable",
+        "largest_change": "existing credits paid back duly till now",
+        "share_reference": 0.52,
+        "share_current": 0.57
+      },
+      {
+        "feature": "job",
+        "psi": 0.0109,
+        "p_value": 0.4963,
+        "status": "stable",
+        "largest_change": "skilled employee/official",
+        "share_reference": 0.639,
+        "share_current": 0.595
+      },
+      {
+        "feature": "duration",
+        "psi": 0.0064,
+        "p_value": 0.9905,
+        "status": "stable",
+        "reference_mean": 20.77,
+        "current_mean": 21.435
+      },
+      {
+        "feature": "number_credits",
+        "psi": 0.0033,
+        "p_value": 0.4212,
+        "status": "stable",
+        "reference_mean": 1.407,
+        "current_mean": 1.405
+      },
+      {
+        "feature": "other_installment_plans",
+        "psi": 0.0021,
+        "p_value": 0.8202,
+        "status": "stable",
+        "largest_change": "none",
+        "share_reference": 0.811,
+        "share_current": 0.825
+      },
+      {
+        "feature": "property",
+        "psi": 0.0009,
+        "p_value": 0.9815,
+        "status": "stable",
+        "largest_change": "building society savings agreement/life insurance",
+        "share_reference": 0.23,
+        "share_current": 0.24
+      },
+      {
+        "feature": "status",
+        "psi": 0.0005,
+        "p_value": 0.9918,
+        "status": "stable",
+        "largest_change": "0 <= ... < 200 DM",
+        "share_reference": 0.268,
+        "share_current": 0.275
+      },
+      {
+        "feature": "telephone",
+        "psi": 0.0005,
+        "p_value": 0.746,
+        "status": "stable",
+        "largest_change": "no",
+        "share_reference": 0.594,
+        "share_current": 0.605
+      },
+      {
+        "feature": "housing",
+        "psi": 0.0002,
+        "p_value": 0.9796,
+        "status": "stable",
+        "largest_change": "rent",
+        "share_reference": 0.18,
+        "share_current": 0.175
+      },
+      {
+        "feature": "people_liable",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 1.16,
+        "current_mean": 1.135
+      },
+      {
+        "feature": "has_checking_account",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.605,
+        "current_mean": 0.61
+      },
+      {
+        "feature": "no_savings",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.18,
+        "current_mean": 0.195
+      },
+      {
+        "feature": "delayed_before",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.09,
+        "current_mean": 0.08
+      }
+    ],
+    "prediction": {
+      "psi": 0.0877,
+      "p_value": 0.0388,
+      "status": "stable",
+      "reference_mean": 0.389,
+      "current_mean": 0.394
+    },
+    "overall": "ok",
+    "summary": "No meaningful drift."
+  },
+  "Applicants under 25 (new segment)": {
+    "n_current": 149,
+    "n_reference": 800,
+    "features": [
+      {
+        "feature": "housing",
+        "psi": 0.4263,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "largest_change": "rent",
+        "share_reference": 0.18,
+        "share_current": 0.463
+      },
+      {
+        "feature": "employment_duration",
+        "psi": 0.3606,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "largest_change": "... >= 7 years",
+        "share_reference": 0.258,
+        "share_current": 0.06
+      },
+      {
+        "feature": "credit_history",
+        "psi": 0.2285,
+        "p_value": 0.0,
+        "status": "monitor",
+        "largest_change": "existing credits paid back duly till now",
+        "share_reference": 0.52,
+        "share_current": 0.738
+      },
+      {
+        "feature": "job",
+        "psi": 0.2118,
+        "p_value": 0.0008,
+        "status": "monitor",
+        "largest_change": "management/self-employed/highly qualified employee/officer",
+        "share_reference": 0.144,
+        "share_current": 0.027
+      },
+      {
+        "feature": "purpose",
+        "psi": 0.1602,
+        "p_value": 0.0165,
+        "status": "stable",
+        "largest_change": "radio/television",
+        "share_reference": 0.186,
+        "share_current": 0.282
+      },
+      {
+        "feature": "number_credits",
+        "psi": 0.1466,
+        "p_value": 0.0,
+        "status": "monitor",
+        "reference_mean": 1.407,
+        "current_mean": 1.201
+      },
+      {
+        "feature": "telephone",
+        "psi": 0.1258,
+        "p_value": 0.0,
+        "status": "monitor",
+        "largest_change": "no",
+        "share_reference": 0.594,
+        "share_current": 0.758
+      },
+      {
+        "feature": "status",
+        "psi": 0.1053,
+        "p_value": 0.0018,
+        "status": "monitor",
+        "largest_change": "no checking account",
+        "share_reference": 0.395,
+        "share_current": 0.255
+      },
+      {
+        "feature": "property",
+        "psi": 0.0682,
+        "p_value": 0.0555,
+        "status": "stable",
+        "largest_change": "unknown/no property",
+        "share_reference": 0.155,
+        "share_current": 0.074
+      },
+      {
+        "feature": "amount",
+        "psi": 0.0585,
+        "p_value": 0.4447,
+        "status": "stable",
+        "reference_mean": 3189.591,
+        "current_mean": 2958.758
+      },
+      {
+        "feature": "amount_per_month",
+        "psi": 0.0574,
+        "p_value": 0.5498,
+        "status": "stable",
+        "reference_mean": 162.541,
+        "current_mean": 156.117
+      },
+      {
+        "feature": "installment_rate",
+        "psi": 0.0321,
+        "p_value": 0.0633,
+        "status": "stable",
+        "reference_mean": 2.941,
+        "current_mean": 2.772
+      },
+      {
+        "feature": "other_installment_plans",
+        "psi": 0.0286,
+        "p_value": 0.1723,
+        "status": "stable",
+        "largest_change": "none",
+        "share_reference": 0.811,
+        "share_current": 0.866
+      },
+      {
+        "feature": "savings",
+        "psi": 0.0261,
+        "p_value": 0.4836,
+        "status": "stable",
+        "largest_change": "unknown/no savings account",
+        "share_reference": 0.18,
+        "share_current": 0.128
+      },
+      {
+        "feature": "duration",
+        "psi": 0.0177,
+        "p_value": 0.9092,
+        "status": "stable",
+        "reference_mean": 20.77,
+        "current_mean": 20.49
+      },
+      {
+        "feature": "other_debtors",
+        "psi": 0.0081,
+        "p_value": 0.4948,
+        "status": "stable",
+        "largest_change": "none",
+        "share_reference": 0.911,
+        "share_current": 0.886
+      },
+      {
+        "feature": "present_residence",
+        "psi": 0.0036,
+        "p_value": 0.7598,
+        "status": "stable",
+        "reference_mean": 2.83,
+        "current_mean": 2.906
+      },
+      {
+        "feature": "people_liable",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 1.16,
+        "current_mean": 1.04
+      },
+      {
+        "feature": "has_checking_account",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.605,
+        "current_mean": 0.745
+      },
+      {
+        "feature": "no_savings",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.18,
+        "current_mean": 0.128
+      },
+      {
+        "feature": "delayed_before",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.09,
+        "current_mean": 0.047
+      }
+    ],
+    "prediction": {
+      "psi": 0.2579,
+      "p_value": 0.0014,
+      "status": "monitor",
+      "reference_mean": 0.389,
+      "current_mean": 0.49
+    },
+    "overall": "alert",
+    "summary": "Significant shift in: housing, employment_duration. Review before relying on the model."
+  },
+  "Largest 25% of loans (product change)": {
+    "n_current": 250,
+    "n_reference": 800,
+    "features": [
+      {
+        "feature": "amount",
+        "psi": 5.7562,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "reference_mean": 3189.591,
+        "current_mean": 7237.84
+      },
+      {
+        "feature": "amount_per_month",
+        "psi": 1.5332,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "reference_mean": 162.541,
+        "current_mean": 270.427
+      },
+      {
+        "feature": "duration",
+        "psi": 0.906,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "reference_mean": 20.77,
+        "current_mean": 32.58
+      },
+      {
+        "feature": "purpose",
+        "psi": 0.2908,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "largest_change": "car (used)",
+        "share_reference": 0.105,
+        "share_current": 0.24
+      },
+      {
+        "feature": "property",
+        "psi": 0.2758,
+        "p_value": 0.0,
+        "status": "significant_shift",
+        "largest_change": "real estate",
+        "share_reference": 0.281,
+        "share_current": 0.1
+      },
+      {
+        "feature": "job",
+        "psi": 0.1901,
+        "p_value": 0.0,
+        "status": "monitor",
+        "largest_change": "management/self-employed/highly qualified employee/officer",
+        "share_reference": 0.144,
+        "share_current": 0.312
+      },
+      {
+        "feature": "telephone",
+        "psi": 0.1458,
+        "p_value": 0.0,
+        "status": "monitor",
+        "largest_change": "no",
+        "share_reference": 0.594,
+        "share_current": 0.404
+      },
+      {
+        "feature": "installment_rate",
+        "psi": 0.0976,
+        "p_value": 0.0,
+        "status": "stable",
+        "reference_mean": 2.941,
+        "current_mean": 2.552
+      },
+      {
+        "feature": "credit_history",
+        "psi": 0.0974,
+        "p_value": 0.0,
+        "status": "stable",
+        "largest_change": "existing credits paid back duly till now",
+        "share_reference": 0.52,
+        "share_current": 0.424
+      },
+      {
+        "feature": "housing",
+        "psi": 0.0742,
+        "p_value": 0.0,
+        "status": "stable",
+        "largest_change": "for free",
+        "share_reference": 0.107,
+        "share_current": 0.204
+      },
+      {
+        "feature": "status",
+        "psi": 0.0653,
+        "p_value": 0.0034,
+        "status": "stable",
+        "largest_change": "0 <= ... < 200 DM",
+        "share_reference": 0.268,
+        "share_current": 0.352
+      },
+      {
+        "feature": "savings",
+        "psi": 0.0566,
+        "p_value": 0.012,
+        "status": "stable",
+        "largest_change": "unknown/no savings account",
+        "share_reference": 0.18,
+        "share_current": 0.248
+      },
+      {
+        "feature": "employment_duration",
+        "psi": 0.0532,
+        "p_value": 0.0024,
+        "status": "stable",
+        "largest_change": "unemployed",
+        "share_reference": 0.051,
+        "share_current": 0.1
+      },
+      {
+        "feature": "number_credits",
+        "psi": 0.0212,
+        "p_value": 0.0194,
+        "status": "stable",
+        "reference_mean": 1.407,
+        "current_mean": 1.488
+      },
+      {
+        "feature": "present_residence",
+        "psi": 0.0173,
+        "p_value": 0.1535,
+        "status": "stable",
+        "reference_mean": 2.83,
+        "current_mean": 2.928
+      },
+      {
+        "feature": "other_debtors",
+        "psi": 0.0129,
+        "p_value": 0.2371,
+        "status": "stable",
+        "largest_change": "guarantor",
+        "share_reference": 0.046,
+        "share_current": 0.028
+      },
+      {
+        "feature": "other_installment_plans",
+        "psi": 0.0061,
+        "p_value": 0.432,
+        "status": "stable",
+        "largest_change": "none",
+        "share_reference": 0.811,
+        "share_current": 0.784
+      },
+      {
+        "feature": "people_liable",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 1.16,
+        "current_mean": 1.164
+      },
+      {
+        "feature": "has_checking_account",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.605,
+        "current_mean": 0.636
+      },
+      {
+        "feature": "no_savings",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.18,
+        "current_mean": 0.248
+      },
+      {
+        "feature": "delayed_before",
+        "psi": 0.0,
+        "p_value": 1.0,
+        "status": "stable",
+        "reference_mean": 0.09,
+        "current_mean": 0.156
+      }
+    ],
+    "prediction": {
+      "psi": 0.1897,
+      "p_value": 0.0,
+      "status": "monitor",
+      "reference_mean": 0.389,
+      "current_mean": 0.509
+    },
+    "overall": "alert",
+    "summary": "Significant shift in: amount, amount_per_month, duration, purpose, property. Review before relying on the model."
+  }
+}

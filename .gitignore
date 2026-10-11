@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.ruff_cache/
+
+# Generated artefacts (re-create with the commands in README)
+mlflow.db
+mlruns/
+mlartifacts/
+models/
+data/delta/
+data/regulations/*.pdf
+data/extra/
+spark-warehouse/
+metastore_db/
+derby.log
+
+
+# Azure Function package (python deploy/azure_function/build.py)
+dist/
