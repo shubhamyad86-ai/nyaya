@@ -1,0 +1,42 @@
+[
+  {
+    "text": "The sale will result in a capital loss of EUR5m for Solidium , which obtained Tikkurila shares in March 2010 .",
+    "label": "negative",
+    "predicted": "positive"
+  },
+  {
+    "text": "- Profit before taxes was EUR 105.9 82.7 million .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Fiskars , the World 's  1 Scissors Brand TM , recently won Learning -\u00ab Magazine 's 2011 Teachers ' Choice Award for the Classroom .",
+    "label": "positive",
+    "predicted": "neutral"
+  },
+  {
+    "text": "Nokia Messaging 1.1 enables customers to receive e-mails from up to 10 e-mail accounts on their mobile phone supporting all POP or IMAP e-mail services .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "In the second quarter of 2010 , the group 's pretax loss narrowed to EUR 400,000 from EUR 600,000 .",
+    "label": "positive",
+    "predicted": "negative"
+  },
+  {
+    "text": "Solidium now holds 5.0 per cent of the shares Solidium Oy has acquired 5.0 per cent of the shares in Tieto Corporation for approximately EUR 58 million .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "In a note to clients published , the Dutch broker described the company 's third quarter results as ` soft ' , although it also noted that Elcoteq retained its guidance , dealers said .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Alfa group will have 43.9 % of voting stock in the new company and Telenor 35.4 % with a free float of 20.7 % .",
+    "label": "neutral",
+    "predicted": "positive"
+  }
+]

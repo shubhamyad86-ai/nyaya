@@ -1,0 +1,42 @@
+[
+  {
+    "text": "F-Secure reported that : - The first half of 2008 has seen a growing number of targeted malware attacks on individuals , companies , and organizations .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Sanoma Corporation wants a new and better frequency for the Helsinki metropolitan area .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "The sale of Savcor FACE to Cencorp will result in a profit or loss which can not yet be determined , owing to factors including the valuation of the consideration shares to be received and prevailing exchange rates .",
+    "label": "neutral",
+    "predicted": "negative"
+  },
+  {
+    "text": "` Very recommendable ' is the Nokian Z G2 according to the ` ADAC judgement ' in the latest summer tyre test of the German automobile association ADAC .",
+    "label": "positive",
+    "predicted": "neutral"
+  },
+  {
+    "text": "Unit costs for flight operations fell by 6.4 percent .",
+    "label": "positive",
+    "predicted": "negative"
+  },
+  {
+    "text": "According shipping company Viking Line , the EU decision will have a significant financial impact .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Karppinen expects the consolidation trend to continue in the Finnish market .",
+    "label": "neutral",
+    "predicted": "positive"
+  },
+  {
+    "text": "Helsinki-based Componenta bought Turkish listed company Doktas in October 2006 for 89 million euros , making it the largest Finnish investment in Turkey to date .",
+    "label": "neutral",
+    "predicted": "positive"
+  }
+]

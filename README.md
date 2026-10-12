@@ -85,11 +85,11 @@ Every number below is produced by the code in this repository and written here a
 
 | Metric | Value |
 |---|---|
-| ROC AUC | 0.791 (CV 0.794 ± 0.028) |
-| Defaulters caught | 87% (52 of 60) |
-| Expected cost per applicant | 0.555 vs 0.70 reject-all and 1.50 approve-all |
+| ROC AUC | 0.791 (CV 0.795 ± 0.031) |
+| Defaulters caught | 83% (50 of 60) |
+| Expected cost per applicant | 0.645 vs 0.70 reject-all and 1.50 approve-all |
 
-**Fairness:** age, sex and foreign-worker status are not model inputs. Sex passes the four-fifths rule (0.86). Age fails (0.46, out-of-fold): under-25s are approved 20% of the time versus 44% for older applicants. A controlled experiment shows that removing age as an input barely changes this (disparate impact 0.45 with it, 0.46 without) and does not reach 0.80, because proxies such as housing and employment length carry the signal, so the model card recommends a dedicated mitigation step. See [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
+**Fairness:** age, sex and foreign-worker status are not model inputs. Sex passes the four-fifths rule (0.84). Age fails (0.48, out-of-fold): under-25s are approved 19% of the time versus 40% for older applicants. A controlled experiment shows that removing age as an input helps only partly (disparate impact 0.42 with it, 0.48 without) and does not reach 0.80, because proxies such as housing and employment length carry the signal, so the model card recommends a dedicated mitigation step. See [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 <!-- /auto:credit -->
 
 ![ROC curves](reports/roc_curves.png)
@@ -114,7 +114,7 @@ The two laws use similar language, so searching both makes GDPR questions harder
 |---|---|
 | Held-out test set (same population) | OK |
 | Applicants under 25 (new segment) | ALERT: housing and employment duration; mean P(default) 0.39 → 0.49 |
-| Largest 25% of loans (product change) | ALERT: amount, amount per month, duration and purpose; mean P(default) 0.39 → 0.50 |
+| Largest 25% of loans (product change) | ALERT: amount, amount per month, duration and purpose; mean P(default) 0.39 → 0.51 |
 <!-- /auto:drift -->
 
 PSI alone flagged 70–100% of random 30–60 applicant samples of the *training data itself* as drifted.
@@ -127,8 +127,8 @@ real shifts above.
 | Method | Accuracy | Macro-F1 | F1 negative | F1 neutral | F1 positive |
 |---|---|---|---|---|---|
 | TF-IDF + logistic regression | 0.864 | **0.821** | 0.767 | 0.909 | 0.787 |
-| Frozen MiniLM embeddings + logistic regression | not run yet - see notebooks/financial_sentiment_colab.ipynb | | | | |
-| DistilBERT fine-tuned (PyTorch) | not run yet - see notebooks/financial_sentiment_colab.ipynb | | | | |
+| Frozen MiniLM embeddings + logistic regression | 0.842 | **0.819** | 0.826 | 0.889 | 0.741 |
+| DistilBERT fine-tuned (PyTorch) | 0.942 | **0.933** | 0.941 | 0.962 | 0.895 |
 <!-- /auto:sentiment -->
 
 Macro-F1 is the headline metric because 62% of sentences are neutral. The transformer rows come from
