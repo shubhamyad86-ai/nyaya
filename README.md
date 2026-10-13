@@ -2,7 +2,7 @@
 
 # ⚖️ Nyaya
 
-### Fair, explainable credit decisions, grounded in the law
+**Fair, explainable credit decisions, grounded in the law**
 
 *Nyaya (न्याय) is Sanskrit for justice and sound reasoning.*
 
@@ -11,43 +11,46 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-fine--tuning-EE4C2C?logo=pytorch&logoColor=white)
 ![LangChain](https://img.shields.io/badge/LangChain-RAG%20%2B%20agent-1C3C3C)
 ![MLflow](https://img.shields.io/badge/MLflow-tracked-0194E2?logo=mlflow&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-Functions-0078D4?logo=microsoftazure&logoColor=white)
+![Databricks](https://img.shields.io/badge/Databricks-Delta%20Lake-FF3621?logo=databricks&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 </div>
 
----
+## Key results
 
-## Why this project exists
+<!-- auto:highlights -->
+| **0.79** | **83%** | **0.933** | **89%** |
+|---|---|---|---|
+| credit ROC AUC (XGBoost) | of defaulters caught | DistilBERT macro-F1 | right law article in top 4 |
+<!-- /auto:highlights -->
 
-When a bank lets an algorithm decide who gets a loan, three questions matter as much as accuracy:
+## Why I built this
 
-1. **Is it fair?** Does the model treat young people, women or foreign workers worse than it should?
-2. **Can it explain itself?** GDPR Article 22 gives people the right not to be judged by a machine
-   alone, and the EU AI Act lists credit scoring as **high-risk AI** (Annex III).
-3. **Does it still work tomorrow?** Customers change, and a model trained on yesterday's applicants
-   can quietly go wrong.
+When a bank lets an algorithm decide who gets a loan, accuracy is only part of the job. Three other
+questions matter just as much:
 
-**Nyaya answers all three in one working system**, built on real data: a credit-risk model that is
-chosen by business cost, explained with SHAP, audited for fairness and monitored for drift, plus an
-AI assistant and agent that look up the actual law and are not allowed to invent citations.
+- **Is it fair?** Does the model treat young people, women or foreign workers worse than it should?
+- **Can it explain itself?** Under GDPR Article 22, people have the right not to be judged by a machine
+  alone, and the EU AI Act lists credit scoring as high-risk AI (Annex III).
+- **Will it still work next month?** Applicants change, and a model trained on last year's customers
+  can go wrong without anyone noticing.
 
----
+I wanted to build one system that takes all three seriously, on real data, and is honest about where it
+falls short. Nyaya scores loan applications, explains every decision, audits the results for bias,
+watches for drift, and looks up the actual law when a case needs review.
 
-## At a glance
+## What's inside
 
-| | |
+| Part | What it does |
 |---|---|
-| 🏦 **Credit risk** | 4 models compared with 5-fold cross-validation; the threshold is set by **business cost** (a missed defaulter costs 5× a lost customer), not by accuracy |
-| 🔍 **Explainability** | SHAP **reason codes** for every applicant ("loan duration raised the risk the most") |
-| ⚖️ **Fairness audit** | Approval rates by age, sex and foreign-worker status, four-fifths rule, equal opportunity; protected attributes are **never** model inputs |
-| 📜 **Law assistant (RAG)** | Answers questions from the **official GDPR and EU AI Act texts** (212 articles, 353 recitals, 13 annexes) and checks every citation it gives |
-| 🤖 **Review agent** | An LLM agent chooses its own tools (score, search the law, fairness check, sentiment); **code, not the model, decides when a human must review** |
-| 📈 **Drift monitoring** | Population Stability Index **plus a significance test**, so small batches don't raise false alarms |
-| 📰 **Financial NLP** | Sentiment on 3,448 expert-labelled news sentences: TF-IDF vs MiniLM embeddings vs **DistilBERT fine-tuned in PyTorch** |
-| ☁️ **Production path** | FastAPI service, **Azure Functions** deployment kit, **Databricks** notebook with Delta tables, Docker, 41 tests and GitHub Actions CI |
-
----
+| **Credit-risk model** | Compares four models with 5-fold cross-validation and picks the one with the lowest *business cost*, since approving a defaulter costs five times more than turning away a good customer. |
+| **Explanations** | Uses SHAP to give every applicant their top reasons, for example "the loan duration raised the risk the most". |
+| **Fairness audit** | Measures approval rates by age, sex and foreign-worker status with the four-fifths rule and equal opportunity. These attributes are never used as model inputs. |
+| **Law assistant (RAG)** | Answers questions from the official GDPR and EU AI Act texts (212 articles, 353 recitals, 13 annexes) and checks every citation it gives against what it actually retrieved. |
+| **Review agent** | An LLM agent that decides which tools to use: scoring, legal search, the fairness check or sentiment. Whether a human must review a case is decided in code, never by the model. |
+| **Drift monitoring** | Compares new applicants with the training data using the Population Stability Index plus a significance test, so small batches don't raise false alarms. |
+| **Financial sentiment** | Classifies 3,448 expert-labelled news sentences, comparing TF-IDF, frozen MiniLM embeddings and DistilBERT fine-tuned in PyTorch. |
+| **Engineering** | FastAPI service, 41 tests with GitHub Actions CI, MLflow tracking, a Databricks pipeline with Delta tables, Docker and an Azure Functions deployment kit. |
 
 ## How it fits together
 
@@ -71,14 +74,12 @@ flowchart LR
     E & N --> O[Azure Function<br/>/score · /drift]
 ```
 
----
-
 ## Results
 
-Every number below is produced by the code in this repository and written here automatically by
-`python scripts/update_docs.py`, so the README always matches the last training run.
+All numbers below come from the code in this repository. `python scripts/update_docs.py` writes them
+into this README after each training run, so the text always matches the latest results.
 
-### 🏦 Credit risk and fairness
+### Credit risk and fairness
 
 <!-- auto:credit -->
 **Credit model: XGBoost** (held-out test set, 200 applicants)
@@ -94,7 +95,7 @@ Every number below is produced by the code in this repository and written here a
 
 ![ROC curves](reports/roc_curves.png)
 
-### 📜 Finding the right law
+### Finding the right law
 
 <!-- auto:rag -->
 **RAG retrieval** (37 hand-labelled questions: 25 GDPR, 12 EU AI Act; offline TF-IDF embeddings)
@@ -107,7 +108,7 @@ Every number below is produced by the code in this repository and written here a
 The two laws use similar language, so searching both makes GDPR questions harder (hit@4 0.76); filtering by regulation recovers it (0.88). These are baseline numbers from the offline index; `python scripts/compare_retrieval.py` measures the semantic `all-MiniLM-L6-v2` index on the same questions.
 <!-- /auto:rag -->
 
-### 📈 Drift monitoring
+### Drift monitoring
 
 <!-- auto:drift -->
 | Batch | Result |
@@ -117,11 +118,10 @@ The two laws use similar language, so searching both makes GDPR questions harder
 | Largest 25% of loans (product change) | ALERT: amount, amount per month, duration and purpose; mean P(default) 0.39 → 0.51 |
 <!-- /auto:drift -->
 
-PSI alone flagged 70–100% of random 30–60 applicant samples of the *training data itself* as drifted.
-Adding a chi-square test (Bonferroni-corrected) cut those false alerts to 0–2% while still catching the
-real shifts above.
+The test set looks like the training data, so the monitor stays quiet. It does raise an alert for the
+two batches that are genuinely different.
 
-### 📰 Financial sentiment (690 held-out sentences, 3 classes)
+### Financial sentiment (690 held-out sentences, 3 classes)
 
 <!-- auto:sentiment -->
 | Method | Accuracy | Macro-F1 | F1 negative | F1 neutral | F1 positive |
@@ -131,38 +131,58 @@ real shifts above.
 | DistilBERT fine-tuned (PyTorch) | 0.942 | **0.933** | 0.941 | 0.962 | 0.895 |
 <!-- /auto:sentiment -->
 
-Macro-F1 is the headline metric because 62% of sentences are neutral. The transformer rows come from
-[notebooks/financial_sentiment_colab.ipynb](notebooks/financial_sentiment_colab.ipynb) on a free GPU.
+I report macro-F1 because 62% of the sentences are neutral, so plain accuracy would flatter a model that
+mostly predicts "neutral". The transformer was fine-tuned on a free Colab GPU with
+[notebooks/financial_sentiment_colab.ipynb](notebooks/financial_sentiment_colab.ipynb).
 
----
+### Running on Databricks
 
-## What I learned (the honest findings)
+I also ran the data pipeline on Databricks Free Edition. It writes Unity Catalog Delta tables
+(bronze → silver + quarantine → gold), tracks the models in MLflow and repeats the fairness audit. All
+1,000 rows passed the quality checks, and the under-25 approval gap appeared there too (disparate impact
+0.525), matching the local results. Details are in [docs/DATABRICKS.md](docs/DATABRICKS.md).
 
-- **Removing a sensitive feature does not remove bias.** Age is not a model input, yet under-25s are
-  still approved far less often. Housing and employment length act as proxies, and the drift monitor
-  points at exactly those features for young applicants. Real mitigation needs a dedicated step
-  (reweighing or group-aware thresholds) plus a legal review.
-- **The industry-standard drift metric over-reacts.** PSI on small batches flagged random noise as
-  drift most of the time. A significance test fixed it.
-- **Small LLMs are bad at tool calling.** Instead of failing, the agent falls back to a fixed,
+## What I learned
+
+- **Removing a sensitive feature does not remove bias.** I took age out of the model, but young
+  applicants were still approved far less often. Housing and employment length carry much of the same
+  information, and the drift monitor flagged exactly those features for under-25s. Fixing this properly
+  would need a dedicated mitigation step and a legal review.
+- **The standard drift metric over-reacts on small batches.** PSI alone flagged 70–100% of random
+  samples of the training data itself as drifted. Adding a chi-square test cut those false alarms to
+  under 2% without missing the real shifts.
+- **Fine-tuning is worth it on domain text.** DistilBERT reached macro-F1 0.933, well ahead of TF-IDF
+  (0.821). It correctly read "the company reported a pre-tax loss and announced layoffs" as negative,
+  which the baseline called neutral.
+- **Small LLMs struggle with tool calling.** Rather than failing, the agent falls back to a fixed,
   auditable plan, and every citation is checked against what was actually retrieved.
 - **The four credit models are within noise of each other.** Which one wins can change with library
-  versions, so the documentation is generated from the results rather than typed by hand.
-- **No FinBERT benchmark, on purpose.** FinBERT was trained on the same PhraseBank data, so testing it
-  here would leak training data into the score.
+  versions, which is why the README numbers are generated from the results instead of typed by hand.
+- **I deliberately left out FinBERT.** It was trained on the same PhraseBank data, so testing it here
+  would leak training data into the score.
 
----
+## Design decisions
+
+| Decision | Reason |
+|---|---|
+| **Cost, not accuracy, picks the model** | A missed defaulter costs five times more than a rejected good customer (Statlog cost matrix). Thresholds are tuned on out-of-fold predictions, and the test set is used once. |
+| **The agent proposes, the code decides** | Human review is triggered by a rule based on the score (GDPR Article 22), never by the LLM. Unknown tools are refused and the number of steps is capped. |
+| **Chunks follow the structure of the law** | One chunk per article, recital or annex, so every passage carries a precise citation such as `GDPR Article 22`. |
+| **Citations are checked, not trusted** | Each citation in an answer is compared with the retrieved passages, and invented ones are flagged. |
+| **Drift needs significance, not just size** | A feature is flagged only if PSI is large and the chi-square p-value is below 0.01 divided by the number of features. |
+| **Deployment uses the training versions** | The Azure build reads the installed library versions, so the saved model loads exactly as it was trained. |
+| **Graceful fallbacks** | No LLM: the assistant returns the cited passages. Small LLM: the agent uses a fixed plan. No Maven access: Spark writes Parquet. |
 
 ## Try it
 
-### Windows (easiest)
+**On Windows**
 
-1. Double-click **`setup.bat`**. It installs everything, trains the models and runs the tests.
-2. Double-click **`start_api.bat`**. The browser opens the interactive API at `http://127.0.0.1:8000/docs`.
+1. Double-click `setup.bat`. It installs everything, trains the models and runs the tests.
+2. Double-click `start_api.bat`. Your browser opens the interactive API at `http://127.0.0.1:8000/docs`.
 
-Step-by-step help and troubleshooting: [RUN_GUIDE.md](RUN_GUIDE.md).
+Step-by-step help and troubleshooting are in [RUN_GUIDE.md](RUN_GUIDE.md).
 
-### Any platform
+**On any platform**
 
 ```bash
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
@@ -182,87 +202,68 @@ uvicorn compliance_ai.api:app --reload                 # http://127.0.0.1:8000/d
 ```
 
 For AI-written answers, install [Ollama](https://ollama.com) and run `ollama pull llama3.2:3b`, or set
-`LLM_PROVIDER=azure` in `.env` (see `.env.example`) for Azure OpenAI. Without an LLM, the assistant
-still returns the cited passages of the law.
+`LLM_PROVIDER=azure` in `.env` to use Azure OpenAI (see `.env.example`). Without an LLM, the assistant
+still returns the relevant passages of the law.
 
-### API
+**API endpoints**
 
 | Endpoint | What you get |
 |---|---|
-| `POST /credit/score` | Probability of default, decision and the top 4 reasons |
-| `POST /credit/review` | Score + relevant law + reviewer memo; flags cases that need a human |
-| `POST /agent/review` | The agent's review, the full tool trace and a citation check |
-| `POST /compliance/ask` | An answer from GDPR / the EU AI Act with checked citations (optional `regulation` filter) |
-| `POST /nlp/sentiment` | Positive / neutral / negative for financial news sentences |
-| `POST /monitor/drift` | 30+ applicants → which features have shifted, and how much |
+| `POST /credit/score` | Probability of default, the decision and the top four reasons |
+| `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
+| `POST /agent/review` | The agent's review, its full tool trace and a citation check |
+| `POST /compliance/ask` | An answer from GDPR or the EU AI Act with checked citations |
+| `POST /nlp/sentiment` | Positive, neutral or negative for financial news sentences |
+| `POST /monitor/drift` | For 30 or more applicants, which features have shifted and by how much |
 | `GET /health` | Which models and indexes are loaded |
 
-### Cloud
+**Cloud**
 
-- **Azure Functions:** `build_azure.bat` packages the model with pinned library versions;
-  `deploy_azure.sh` in Azure Cloud Shell creates and tests `/api/health`, `/api/score` and `/api/drift`.
-  → [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md)
-- **Databricks:** an importable notebook builds Unity Catalog Delta tables, trains with MLflow and
-  audits fairness. → [docs/DATABRICKS.md](docs/DATABRICKS.md)
+- **Databricks:** import `notebooks/databricks_credit_pipeline.py` into Databricks Free Edition and click
+  Run all. See [docs/DATABRICKS.md](docs/DATABRICKS.md).
+- **Azure Functions:** `build_azure.bat` packages the model, and `deploy_azure.sh` deploys and tests it
+  from Azure Cloud Shell. See [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md).
 - **Docker:** `docker build -t nyaya . && docker run -p 8000:8000 nyaya`
-
----
-
-## Design decisions
-
-| Decision | Why |
-|---|---|
-| **Cost, not accuracy, picks the model** | Approving a defaulter costs 5× more than rejecting a good customer (Statlog cost matrix). Thresholds are tuned on out-of-fold predictions; the test set is touched once. |
-| **The agent proposes, policy decides** | Whether a case needs human review is set in code from the score (GDPR Art. 22), never by the LLM. Unknown tools are refused and steps are capped. |
-| **Chunks follow the law's structure** | One chunk per article, recital or annex, so every passage carries a precise citation like `GDPR Article 22`. |
-| **Grounding is checked, not assumed** | Every citation in an answer is compared with what was retrieved; invented ones are flagged. |
-| **Drift needs significance, not just size** | A shift is flagged only if PSI is large *and* the chi-square p-value is below 0.01 / number of features. |
-| **Deployment pins what training used** | The Azure build reads the installed library versions so the saved model loads exactly as trained. |
-| **Graceful degradation** | No LLM → cited passages only. Small LLM can't use tools → fixed plan. No Maven → Spark writes Parquet. |
-
----
 
 ## Project structure
 
 ```
 src/compliance_ai/
-  credit/      data · models · metrics (cost, threshold) · train (CV, MLflow)
-               explain (SHAP) · fairness · segment (k-means, Isolation Forest) · predict
-  rag/         ingest (article-aware chunks) · store (FAISS) · llm (Ollama / Azure)
-               assistant (grounded answers) · evaluate
-  nlp/         data · models (TF-IDF, embeddings, PyTorch fine-tuning) · train · predict
-  agent.py     tool-calling review agent with guardrails
+  credit/        data · models · metrics (cost, threshold) · train (CV, MLflow)
+                 explain (SHAP) · fairness · segment (k-means, Isolation Forest) · predict
+  rag/           ingest (article-aware chunks) · store (FAISS) · llm (Ollama / Azure)
+                 assistant (grounded answers) · evaluate
+  nlp/           data · models (TF-IDF, embeddings, PyTorch fine-tuning) · train · predict
+  agent.py       tool-calling review agent with guardrails
   monitoring.py  PSI + chi-square drift checks
-  api.py       FastAPI service
-notebooks/     Colab GPU run (sentiment) · Databricks pipeline
-spark/         bronze → silver (+ quarantine) → gold with Delta Lake
-deploy/        Azure Functions app, build and Cloud Shell deploy scripts
-scripts/       download_data · eda · drift_demo · compare_retrieval · update_docs
-eval/          37 hand-labelled questions for retrieval evaluation
-reports/       metrics, plots, drift report
-docs/          model card · Azure guide · Databricks guide
-tests/         41 tests (unit, API, agent, Spark, Azure handlers)
+  api.py         FastAPI service
+notebooks/       Colab GPU run (sentiment) · Databricks pipeline
+spark/           bronze → silver (+ quarantine) → gold with Delta Lake
+deploy/          Azure Functions app, build and Cloud Shell deploy scripts
+scripts/         download_data · eda · drift_demo · compare_retrieval · update_docs
+eval/            37 hand-labelled questions for retrieval evaluation
+reports/         metrics, plots, drift report
+docs/            model card · Azure guide · Databricks guide
+tests/           41 tests (unit, API, agent, Spark, Azure handlers)
 ```
 
-Full model documentation, including limitations: [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
-
----
+The full model documentation, including limitations, is in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
 
 ## Data
 
-| Dataset | Source | Use |
+| Dataset | Source | Used for |
 |---|---|---|
 | Statlog German Credit (1,000 applicants) | UCI, H. Hofmann (1994), decoded CSV via [selva86/datasets](https://github.com/selva86/datasets) | Credit model, fairness, drift |
-| GDPR, Regulation (EU) 2016/679 | Official EUR-Lex text via [coolharsh55/GDPRtEXT](https://github.com/coolharsh55/GDPRtEXT) | RAG assistant |
-| EU AI Act, Regulation (EU) 2024/1689 | Official Journal HTML via [jsiddamsetty/aiactbrowser](https://github.com/jsiddamsetty/aiactbrowser) (pinned) | RAG assistant |
-| Financial PhraseBank v1.0 | Malo et al. (2014), CC BY-NC-SA 3.0 ([details](data/finance_text/README.md)) | Sentiment NLP |
+| GDPR, Regulation (EU) 2016/679 | Official EUR-Lex text via [coolharsh55/GDPRtEXT](https://github.com/coolharsh55/GDPRtEXT) | Law assistant |
+| EU AI Act, Regulation (EU) 2024/1689 | Official Journal HTML via [jsiddamsetty/aiactbrowser](https://github.com/jsiddamsetty/aiactbrowser) (pinned) | Law assistant |
+| Financial PhraseBank v1.0 | Malo et al. (2014), CC BY-NC-SA 3.0 ([details](data/finance_text/README.md)) | Sentiment |
 
 ## Limitations
 
-The credit data is small, old and from one country, so this demonstrates **method**, not a
-production lending model. Retrieval is evaluated on 37 questions; LLM answers still need human review,
-and nothing here is legal advice. The Databricks notebook was checked locally with PySpark rather
-than on a Databricks workspace.
+The credit data is small, old and from one country, so Nyaya demonstrates a method, not a
+production lending model. The law assistant is evaluated on 37 questions, its answers still need human
+review, and nothing here is legal advice. The Azure Functions app is packaged and tested but is not
+running live.
 
 ---
 

@@ -34,6 +34,13 @@ If you used another catalog, schema or volume, change the three widgets at the t
 | `compliance_ai.credit.train`: 4 models, SHAP, MLflow in `mlflow.db` | 2 models (no extra installs needed), MLflow in the workspace |
 | `reports/metrics.json` fairness audit | Fairness table logged to MLflow and displayed |
 
-Checked locally with PySpark and MLflow standing in for the Databricks objects; the first run on
-Databricks itself may need small fixes. If a cell fails, the error message and cell number are enough
-to fix it.
+## Result of the run on Databricks Free Edition (October 2026)
+
+| Step | Result |
+|---|---|
+| Silver | 1,000 rows passed the quality rules, 0 quarantined |
+| MLflow | logistic regression CV AUC 0.764, expected cost 0.510; gradient boosting 0.782, 0.521 |
+| Selected model | logistic regression (lowest cost) |
+| Fairness | under-25 disparate impact 0.525 (fails four-fifths rule); female 0.932 (passes) |
+
+These agree with the local pipeline: the age gap persists even though age is not a model input.
