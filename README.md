@@ -56,22 +56,23 @@ watches for drift, and looks up the actual law when a case needs review.
 
 ```mermaid
 flowchart LR
-    subgraph Data
-        A[German Credit<br/>1,000 real applicants]
-        H[GDPR + EU AI Act<br/>official texts]
-        S[Financial PhraseBank<br/>3,448 sentences]
-    end
-    A --> B[PySpark / Delta<br/>bronze → silver → gold]
-    A --> D[4 models × 5-fold CV<br/>cost-based threshold]
-    D -->|MLflow| E[Selected model]
-    E --> F[SHAP reason codes]
-    E --> G[Fairness audit]
-    E --> N[Drift monitor<br/>PSI + chi-square]
-    H --> I[Article-aware chunks] --> J[FAISS index] --> K[RAG assistant<br/>citation check]
-    S --> T[TF-IDF · MiniLM · DistilBERT]
-    F & G & K & T --> L[Review agent<br/>tools + guardrails]
-    L --> M[FastAPI]
-    E & N --> O[Azure Function<br/>/score · /drift]
+    A["German Credit: 1,000 applicants"] --> D["4 models, 5-fold CV, cost-based threshold"]
+    A --> B["PySpark and Delta: bronze, silver, gold"]
+    D -->|MLflow| E["Selected model"]
+    E --> F["SHAP reason codes"]
+    E --> G["Fairness audit"]
+    E --> N["Drift monitor: PSI and chi-square"]
+    H["GDPR and EU AI Act texts"] --> I["Article-aware chunks"]
+    I --> J["FAISS index"]
+    J --> K["RAG assistant with citation check"]
+    S["Financial PhraseBank: 3,448 sentences"] --> T["TF-IDF, MiniLM, DistilBERT"]
+    F --> L["Review agent with guardrails"]
+    G --> L
+    K --> L
+    T --> L
+    L --> M["FastAPI service"]
+    E --> O["Azure Function: score and drift"]
+    N --> O
 ```
 
 ## Results

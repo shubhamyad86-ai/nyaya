@@ -257,7 +257,10 @@ def main() -> dict:
         print("Logging the model to MLflow...", flush=True)
         mlflow.sklearn.log_model(
             final, name="model", input_example=X_te.head(3), pip_requirements=reqs,
-            skops_trusted_types=["xgboost.core.Booster", "xgboost.sklearn.XGBClassifier"],
+            # Types this project creates itself: XGBoost, or the trees inside gradient boosting
+            # and random forest (which model wins depends on the installed library versions).
+            skops_trusted_types=["xgboost.core.Booster", "xgboost.sklearn.XGBClassifier",
+                                 "sklearn.tree._tree.Tree"],
         )
 
     print(f"Test ROC AUC {test['roc_auc']:.3f} | expected cost {test['expected_cost']:.3f} "

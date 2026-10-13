@@ -275,7 +275,41 @@ def sentiment_rows(path: Path) -> str | None:
     return "\n".join(lines)
 
 
+def highlights(metrics: dict | None, rag: dict | None, nlp_path: Path) -> str | None:
+    import csv
+
+    cells = []
+    if metrics:
+        t = metrics["test"]
+        name = NAMES.get(metrics["selected_model"], metrics["selected_model"])
+        cells.append((f"{t['roc_auc']:.2f}", f"credit ROC AUC ({name})"))
+        cells.append((pct(t["recall_defaulters"]), "of defaulters caught"))
+    if nlp_path.exists():
+        with open(nlp_path, newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        if rows:
+            best = max(rows, key=lambda r: float(r["macro_f1"]))
+            label = "DistilBERT macro-F1" if best["method"] == "fine_tuned_transformer" else "sentiment macro-F1"
+            cells.append((f"{float(best['macro_f1']):.3f}", label))
+    if rag and "with_regulation_filter" in rag:
+        cells.append((pct(rag["with_regulation_filter"]["hit@4"]), "right law article in top 4"))
+    if not cells:
+        return None
+    return ("| " + " | ".join(f"**{v}**" for v, _ in cells) + " |\n"
+            + "|" + "---|" * len(cells) + "\n"
+            + "| " + " | ".join(k for _, k in cells) + " |")
+
+
 # ---------------------------------------------------------------- write
+
+def add_highlights_marker(text: str) -> str:
+    """Add an empty Key results block above "Why this project exists" if the README has none."""
+    anchor = "## Why this project exists"
+    if "<!-- auto:highlights -->" in text or anchor not in text:
+        return text
+    return text.replace(anchor, "## Key results\n\n<!-- auto:highlights -->\n(filled by update_docs.py)\n<!-- /auto:highlights -->\n\n"
+                        "---\n\n" + anchor, 1)
+
 
 def add_sentiment_markers(text: str) -> str:
     """Older READMEs have the sentiment table without markers; wrap it once."""
@@ -306,6 +340,9 @@ def main() -> int:
     if drift:
         blocks["drift"] = drift_rows(drift, short=False)
         blocks["card-drift"] = drift_rows(drift, short=True)
+    top = highlights(metrics, rag, REPORTS / "nlp_comparison.csv")
+    if top:
+        blocks["highlights"] = top
     sentiment = sentiment_rows(REPORTS / "nlp_comparison.csv")
     if sentiment:
         blocks["sentiment"] = sentiment
@@ -314,7 +351,7 @@ def main() -> int:
         return 1
 
     for doc in (ROOT / "README.md", ROOT / "docs/MODEL_CARD.md"):
-        text = add_sentiment_markers(doc.read_text(encoding="utf-8"))
+        text = add_highlights_marker(add_sentiment_markers(doc.read_text(encoding="utf-8")))
         updated = []
         for name, content in blocks.items():
             text, ok = replace_block(text, name, content)
