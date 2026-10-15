@@ -50,7 +50,9 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Review agent** | An LLM agent that decides which tools to use: scoring, legal search, the fairness check or sentiment. Whether a human must review a case is decided in code, never by the model. |
 | **Drift monitoring** | Compares new applicants with the training data using the Population Stability Index plus a significance test, so small batches don't raise false alarms. |
 | **Financial sentiment** | Classifies 3,448 expert-labelled news sentences, comparing TF-IDF, frozen MiniLM embeddings and DistilBERT fine-tuned in PyTorch. |
-| **Engineering** | FastAPI service, 41 tests with GitHub Actions CI, MLflow tracking, a Databricks pipeline with Delta tables, Docker and an Azure Functions deployment kit. |
+| **A/B testing** | A champion-vs-challenger experiment for the credit model: power analysis, hash-based random assignment, a sample-ratio check, significance tests with confidence intervals, and a paired comparison on the same applicants. |
+| **Batch checks** | Scores a CSV of new applicants in one go, flags every decision that needs a human under GDPR Article 22, and audits the batch for fairness and drift. |
+| **Engineering** | FastAPI service, 47 tests with GitHub Actions CI, MLflow tracking, a Databricks pipeline with Delta tables, Docker and an Azure Functions deployment kit. |
 
 ## How it fits together
 
@@ -143,6 +145,20 @@ I also ran the data pipeline on Databricks Free Edition. It writes Unity Catalog
 1,000 rows passed the quality checks, and the under-25 approval gap appeared there too (disparate impact
 0.525), matching the local results. Details are in [docs/DATABRICKS.md](docs/DATABRICKS.md).
 
+### Champion vs challenger A/B test
+
+Before replacing a production model, I test the replacement the way a bank would.
+`scripts/ab_test.py` first works out how many applicants a live test needs (power analysis), then
+assigns the 200 held-out applicants to arm A or B by hashing their ID, checks the split for a sample
+ratio mismatch, and compares approval rate, default rate among approvals and cost per applicant with
+confidence intervals. It also runs both models on every applicant (a paired "shadow" comparison with a
+McNemar test), which needs far fewer applicants because each applicant is their own control.
+
+The main lesson: 100 applicants per arm is far too few. Detecting a 5-point change in approval rate
+needs well over a thousand per arm, so a "not significant" result on a small split means "not enough
+data", not "no difference". The full results are in `reports/ab_test.md` and in MLflow under
+`credit-ab-test`.
+
 ## What I learned
 
 - **Removing a sensitive feature does not remove bias.** I took age out of the model, but young
@@ -196,6 +212,8 @@ python -m compliance_ai.rag.build_index --backend tfidf
 python -m compliance_ai.rag.evaluate
 python -m compliance_ai.nlp.train --method tfidf_baseline
 python scripts/drift_demo.py
+python scripts/ab_test.py                              # champion vs challenger A/B test
+python scripts/check_csv.py my_applicants.csv          # score and audit a CSV of new applicants
 python scripts/update_docs.py                          # write the results into this README
 pytest -q
 
@@ -237,15 +255,16 @@ src/compliance_ai/
   nlp/           data · models (TF-IDF, embeddings, PyTorch fine-tuning) · train · predict
   agent.py       tool-calling review agent with guardrails
   monitoring.py  PSI + chi-square drift checks
+  experiment.py  A/B testing: assignment, power analysis, significance tests
   api.py         FastAPI service
 notebooks/       Colab GPU run (sentiment) · Databricks pipeline
 spark/           bronze → silver (+ quarantine) → gold with Delta Lake
 deploy/          Azure Functions app, build and Cloud Shell deploy scripts
-scripts/         download_data · eda · drift_demo · compare_retrieval · update_docs
+scripts/         download_data · eda · drift_demo · ab_test · check_csv · compare_retrieval · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
 docs/            model card · Azure guide · Databricks guide
-tests/           41 tests (unit, API, agent, Spark, Azure handlers)
+tests/           47 tests (unit, API, agent, Spark, Azure handlers, A/B statistics)
 ```
 
 The full model documentation, including limitations, is in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).

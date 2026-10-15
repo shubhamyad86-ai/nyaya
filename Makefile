@@ -1,7 +1,7 @@
 PY ?= python
 export PYTHONPATH := src
 
-.PHONY: setup data eda train sentiment index index-offline eval drift docs spark azure-package api test lint all
+.PHONY: setup data eda train sentiment index index-offline eval drift ab-test docs spark azure-package api test lint all
 
 setup:            ## install everything, including semantic embeddings
 	$(PY) -m pip install -r requirements-dev.txt -r requirements-hf.txt -r requirements-nlp.txt
@@ -30,6 +30,9 @@ eval:
 
 drift:            ## drift monitoring demo -> reports/drift_report.md
 	$(PY) scripts/drift_demo.py
+
+ab-test:          ## champion vs challenger A/B test -> reports/ab_test.md
+	$(PY) scripts/ab_test.py
 
 docs:             ## rewrite README / model card result sections from reports/
 	$(PY) scripts/update_docs.py
