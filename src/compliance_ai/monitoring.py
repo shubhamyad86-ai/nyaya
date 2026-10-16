@@ -166,7 +166,7 @@ def check_drift(applicants: pd.DataFrame | list[dict]) -> dict:
         raise FileNotFoundError(f"{path} not found - run `python -m compliance_ai.credit.train` first")
     profile = json.loads(path.read_text())
     df = pd.DataFrame(applicants) if not isinstance(applicants, pd.DataFrame) else applicants.copy()
-    validate(df, require_target=False)
+    validate(df, require_target=False, check_categories=False)
     df = add_features(df)
     bundle = load_bundle()
     X = df[bundle["numeric"] + bundle["categorical"]]

@@ -49,6 +49,8 @@ def main() -> int:
 
     out = df.copy()
     out["p_default"] = [r["p_default"] for r in results]
+    out["credit_score"] = [r["credit_score"] for r in results]
+    out["result"] = [r["result"] for r in results]
     out["decision"] = [r["decision"] for r in results]
     out["requires_human_review"] = out["decision"] != "approve"
     out["top_reasons"] = [_fmt_reasons(r["reasons"]) for r in results]
@@ -56,7 +58,9 @@ def main() -> int:
     model = results[0]["model"]
 
     lines = [f"# Applicant check: {path.name}", "",
-             f"Model: **{model}**, threshold {threshold:.3f} on P(default). {len(out)} applicants.", ""]
+             f"Model: **{model}**, threshold {threshold:.3f} on P(default), so the pass mark is a "
+             f"credit score of {results[0]['pass_mark']}. {len(out)} applicants: "
+             f"{(out['result'] == 'PASS').sum()} PASS, {(out['result'] == 'FAIL').sum()} FAIL.", ""]
 
     n_ref = int(out["requires_human_review"].sum())
     lines += ["## Decisions", "",

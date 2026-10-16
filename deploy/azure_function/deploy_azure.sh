@@ -6,7 +6,8 @@
 #   bash deploy_azure.sh delete     delete everything this script created (stops all costs)
 #
 # Expects compliance_ai_function.zip (made by build.py on your PC) in the same folder.
-# Region: LOCATION=southeastasia bash deploy_azure.sh   (default centralindia)
+# Region: LOCATION=germanywestcentral bash deploy_azure.sh   (default centralindia)
+# CI (GitHub Actions): set RG, APP and STORAGE in the environment so every run updates the same app.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -20,10 +21,10 @@ if [ -f "$STATE" ]; then
   source "$STATE"
 else
   SUFFIX=$(tr -dc 'a-z0-9' </dev/urandom | head -c 6 || true)
-  RG="rg-compliance-ai"
+  RG="${RG:-rg-compliance-ai}"
   LOCATION="${LOCATION:-centralindia}"
-  STORAGE="stcompai${SUFFIX}"          # 3-24 lowercase letters/digits, globally unique
-  APP="compliance-ai-${SUFFIX}"        # becomes https://<APP>.azurewebsites.net
+  STORAGE="${STORAGE:-stcompai${SUFFIX}}"   # 3-24 lowercase letters/digits, globally unique
+  APP="${APP:-compliance-ai-${SUFFIX}}"     # becomes https://<APP>.azurewebsites.net
 fi
 
 save_state() {
@@ -50,6 +51,11 @@ run_tests() {
   curl -s -X POST "https://$host/api/score?code=$key" -H "Content-Type: application/json" \
        --data @"$tmp/sample_applicant.json" | pretty
 
+  echo "== POST /api/app/score (public demo page's scoring call)"
+  curl -s -X POST "https://$host/api/app/score" -H "Content-Type: application/json" \
+       --data @"$tmp/sample_applicant.json" | python3 -c \
+       'import json,sys; r=json.load(sys.stdin); print("credit score", r.get("credit_score"), "|", r.get("result", r))'
+
   echo "== POST /api/drift (60 applicants)"
   curl -s -X POST "https://$host/api/drift?code=$key" -H "Content-Type: application/json" \
        --data @"$tmp/sample_batch.json" | python3 -c \
@@ -58,6 +64,7 @@ run_tests() {
   cat <<EOF
 
 Endpoints
+  https://$host/api/app        <- open this in a browser: the credit check page
   https://$host/api/health
   https://$host/api/score?code=<function key>
   https://$host/api/drift?code=<function key>
@@ -86,33 +93,40 @@ echo "App: $APP | resource group: $RG | region: $LOCATION | Python $PY"
 az account show -o none 2>/dev/null || az login
 echo "Subscription: $(az account show --query name -o tsv)"
 
-echo "== Registering resource providers (first time can take a few minutes)"
-for ns in Microsoft.Web Microsoft.Storage Microsoft.Insights Microsoft.OperationalInsights; do
-  az provider register --namespace "$ns" --wait -o none
-done
+if az functionapp show -g "$RG" -n "$APP" -o none 2>/dev/null; then
+  echo "== Function App $APP exists - updating it"
+  save_state
+else
+  echo "== Registering resource providers (first time can take a few minutes)"
+  for ns in Microsoft.Web Microsoft.Storage Microsoft.Insights Microsoft.OperationalInsights; do
+    az provider register --namespace "$ns" --wait -o none
+  done
 
-if [ -z "$(az functionapp list-flexconsumption-locations --query "[?name=='$LOCATION'].name" -o tsv)" ]; then
-  echo "Region '$LOCATION' does not offer Flex Consumption. Available regions:"
-  az functionapp list-flexconsumption-locations --query "sort_by(@, &name)[].name" -o tsv | paste -sd' '
-  echo "Re-run with e.g.:  LOCATION=southeastasia bash deploy_azure.sh"
-  exit 1
-fi
-save_state
+  if [ -z "$(az functionapp list-flexconsumption-locations --query "[?name=='$LOCATION'].name" -o tsv)" ]; then
+    echo "Region '$LOCATION' does not offer Flex Consumption. Available regions:"
+    az functionapp list-flexconsumption-locations --query "sort_by(@, &name)[].name" -o tsv | paste -sd' '
+    echo "Re-run with e.g.:  LOCATION=southeastasia bash deploy_azure.sh"
+    exit 1
+  fi
+  save_state
 
-echo "== Resource group"
-az group create -n "$RG" -l "$LOCATION" -o none
+  echo "== Resource group"
+  az group show -n "$RG" -o none 2>/dev/null || az group create -n "$RG" -l "$LOCATION" -o none
 
-echo "== Storage account $STORAGE"
-if ! az storage account show -g "$RG" -n "$STORAGE" -o none 2>/dev/null; then
-  az storage account create -g "$RG" -n "$STORAGE" -l "$LOCATION" --sku Standard_LRS \
-     --allow-blob-public-access false --min-tls-version TLS1_2 -o none
-fi
+  echo "== Storage account $STORAGE"
+  if ! az storage account show -g "$RG" -n "$STORAGE" -o none 2>/dev/null; then
+    az storage account create -g "$RG" -n "$STORAGE" -l "$LOCATION" --sku Standard_LRS \
+       --allow-blob-public-access false --min-tls-version TLS1_2 -o none
+  fi
 
-echo "== Function App $APP (Flex Consumption, Python $PY)"
-if ! az functionapp show -g "$RG" -n "$APP" -o none 2>/dev/null; then
+  echo "== Function App $APP (Flex Consumption, Python $PY)"
   az functionapp create -g "$RG" -n "$APP" --storage-account "$STORAGE" \
      --flexconsumption-location "$LOCATION" --runtime python --runtime-version "$PY" -o none
 fi
+
+# The demo page is public, so cap how far the app can scale (and what it can cost).
+az functionapp scale config set -g "$RG" -n "$APP" --maximum-instance-count 2 -o none \
+  || echo "   (could not set the instance cap; set it in Portal -> $APP -> Scale and concurrency)"
 
 echo "== Deploying the zip (Azure installs requirements.txt on Linux; takes 3-8 minutes)"
 az functionapp deployment source config-zip -g "$RG" -n "$APP" --src "$ZIP" --build-remote true -o none

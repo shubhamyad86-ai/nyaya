@@ -25,11 +25,47 @@ NUMERIC_RANGES = {
 }
 
 
+# Allowed values of each categorical column, as they appear in the training data
+# (Statlog German Credit, corrected codebook by Grömping 2019).
+CATEGORIES = {
+    "status": ["no checking account", "... < 100 DM", "0 <= ... < 200 DM",
+               "... >= 200 DM / salary for at least 1 year"],
+    "credit_history": ["no credits taken/all credits paid back duly",
+                       "all credits at this bank paid back duly",
+                       "existing credits paid back duly till now",
+                       "delay in paying off in the past",
+                       "critical account/other credits existing"],
+    "purpose": ["car (new)", "car (used)", "furniture/equipment", "radio/television",
+                "domestic appliances", "repairs", "education", "retraining",
+                "business", "others"],
+    "savings": ["unknown/no savings account", "... < 100 DM", "100 <= ... < 500 DM",
+                "500 <= ... < 1000 DM", "... >= 1000 DM"],
+    "employment_duration": ["unemployed", "... < 1 year", "1 <= ... < 4 years",
+                            "4 <= ... < 7 years", "... >= 7 years"],
+    "personal_status_sex": ["male : divorced/separated", "female : divorced/separated/married",
+                            "male : single", "male : married/widowed"],
+    "other_debtors": ["none", "co-applicant", "guarantor"],
+    "property": ["unknown/no property", "car or other",
+                 "building society savings agreement/life insurance", "real estate"],
+    "other_installment_plans": ["bank", "stores", "none"],
+    "housing": ["for free", "rent", "own"],
+    "job": ["unemployed/unskilled - non-resident", "unskilled - resident",
+            "skilled employee/official",
+            "management/self-employed/highly qualified employee/officer"],
+    "telephone": ["no", "yes"],
+    "foreign_worker": ["yes", "no"],
+}
+
+
 class DataValidationError(ValueError):
     """Raised when the input data does not match the expected schema."""
 
 
-def validate(df: pd.DataFrame, require_target: bool = True) -> None:
+def validate(df: pd.DataFrame, require_target: bool = True, check_categories: bool = True) -> None:
+    """Raise DataValidationError if columns, missing values, ranges or categories are wrong.
+
+    check_categories=False lets drift monitoring report new categories instead of rejecting them.
+    """
     expected = EXPECTED_COLUMNS if require_target else EXPECTED_COLUMNS[:-1]
     missing = [c for c in expected if c not in df.columns]
     if missing:
@@ -41,6 +77,11 @@ def validate(df: pd.DataFrame, require_target: bool = True) -> None:
         bad = ~df[col].between(lo, hi)
         if bad.any():
             raise DataValidationError(f"{col}: {int(bad.sum())} value(s) outside [{lo}, {hi}]")
+    for col, allowed in (CATEGORIES.items() if check_categories else ()):
+        bad = ~df[col].isin(allowed)
+        if bad.any():
+            examples = sorted(map(str, df.loc[bad, col].unique()))[:3]
+            raise DataValidationError(f"{col}: unknown value(s) {examples}; allowed: {allowed}")
     if require_target and not set(df["credit_risk"].unique()) <= {0, 1}:
         raise DataValidationError("credit_risk must be 0 (bad) or 1 (good)")
 

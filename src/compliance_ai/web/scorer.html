@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyaya Credit Check</title>
+<style>
+  :root {
+    --bg: #F5F3EE; --panel: #FFFFFF; --ink: #17213A; --muted: #5D6478; --line: #E2DFD6;
+    --brand: #1B2A4A; --accent: #D9731A; --pass: #1E7A4C; --pass-bg: #E5F3EA;
+    --fail: #B3261E; --fail-bg: #FBE9E7; --up: #D9731A; --down: #2F6FB0; --field: #FBFAF7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10141F; --panel: #181E2C; --ink: #E8EAF0; --muted: #9AA1B4; --line: #2A3245;
+      --brand: #C9D4F0; --accent: #F0954A; --pass: #5CC98E; --pass-bg: #163325;
+      --fail: #F2887F; --fail-bg: #3A1D1B; --up: #F0954A; --down: #6FA8E8; --field: #121827;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  header { padding: 28px 24px 8px; max-width: 1180px; margin: 0 auto; }
+  .brand { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+           font-weight: 700; }
+  h1 { margin: 4px 0 6px; font-size: 28px; color: var(--brand); letter-spacing: -.01em; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  main { max-width: 1180px; margin: 0 auto; padding: 16px 24px 48px;
+         display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 24px; align-items: start; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;
+             color: var(--muted); font-size: 14px; }
+  .presets button { border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+                    padding: 6px 12px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .presets button:hover { border-color: var(--accent); }
+  fieldset { border: 1px solid var(--line); background: var(--panel); border-radius: 12px;
+             padding: 16px 18px 6px; margin: 0 0 16px; }
+  legend { font-weight: 700; padding: 0 6px; color: var(--brand); }
+  fieldset.audit { border-style: dashed; }
+  .audit-note { margin: -4px 0 12px; color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; }
+  label { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  label span.name { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+  select, input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+                  background: var(--field); color: var(--ink); font: inherit; }
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input:invalid { border-color: var(--fail); }
+  .hint { font-size: 12px; color: var(--muted); }
+  aside { position: sticky; top: 16px; background: var(--panel); border: 1px solid var(--line);
+          border-radius: 14px; padding: 20px; }
+  .result-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .score { font-size: 56px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;
+           color: var(--brand); }
+  .score small { font-size: 18px; color: var(--muted); font-weight: 600; }
+  .badge { font-weight: 800; letter-spacing: .08em; padding: 6px 14px; border-radius: 8px; font-size: 18px; }
+  .badge.PASS { color: var(--pass); background: var(--pass-bg); }
+  .badge.FAIL { color: var(--fail); background: var(--fail-bg); }
+  .scale { position: relative; height: 12px; border-radius: 6px; margin: 22px 0 30px;
+           background: linear-gradient(90deg, var(--fail-bg), var(--line) 60%, var(--pass-bg)); }
+  .scale .mark { position: absolute; top: -6px; width: 2px; height: 24px; background: var(--ink); }
+  .scale .mark span { position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+                      white-space: nowrap; font-size: 12px; color: var(--muted); }
+  .scale .dot { position: absolute; top: -4px; width: 20px; height: 20px; margin-left: -10px;
+                border-radius: 50%; background: var(--accent); border: 3px solid var(--panel);
+                box-shadow: 0 0 0 1px var(--accent); transition: left .35s ease; }
+  .verdict { margin: 0 0 14px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+       margin: 18px 0 8px; }
+  .reason { display: grid; grid-template-columns: 1fr 110px; gap: 2px 12px; align-items: center;
+            padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .reason .val { grid-column: 1; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .reason .bar { grid-row: 1 / span 2; grid-column: 2; position: relative; height: 10px;
+                 background: var(--line); border-radius: 5px; }
+  .reason .bar i { position: absolute; top: 0; height: 10px; border-radius: 5px; }
+  .reason .bar::after { content: ""; position: absolute; left: 50%; top: -3px; width: 1px; height: 16px;
+                        background: var(--muted); }
+  .legend { font-size: 12px; color: var(--muted); display: flex; gap: 14px; margin-top: 6px; }
+  .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px;
+              vertical-align: -1px; }
+  .note { margin-top: 16px; padding: 12px; border-radius: 10px; background: var(--field);
+          border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .note strong { color: var(--ink); }
+  .error { color: var(--fail); font-weight: 600; }
+  details { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; background: var(--field);
+        padding: 10px; border-radius: 8px; max-height: 260px; overflow: auto; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 32px; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--brand); }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; padding: 12px 16px 40px; }
+    header { padding: 20px 16px 4px; }
+    aside { position: static; order: -1; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Nyaya · explainable credit risk</div>
+  <h1>Credit check</h1>
+  <p>Choose the applicant's details. The model returns a credit score from 0 to 100, PASS or FAIL against
+     the pass mark, and the factors that moved the score most.</p>
+</header>
+
+<main>
+  <form id="form" novalidate>
+    <div class="presets"><span>Try a real applicant:</span></div>
+  </form>
+
+  <aside aria-live="polite">
+    <div class="result-head">
+      <div class="score" id="score">–<small> / 100</small></div>
+      <div class="badge" id="badge"></div>
+    </div>
+    <div class="scale" aria-hidden="true">
+      <div class="mark" id="mark"><span id="mark-label">pass mark</span></div>
+      <div class="dot" id="dot" style="left:0"></div>
+    </div>
+    <p class="verdict" id="verdict">Fill in the form to see the result.</p>
+
+    <h2>Why this score</h2>
+    <div id="reasons"></div>
+    <div class="legend"><span><b style="background:var(--up)"></b>raises risk</span>
+      <span><b style="background:var(--down)"></b>lowers risk</span></div>
+
+    <div class="note"><strong>No automatic rejection.</strong> A FAIL sends the application to a human
+      underwriter, as GDPR Article 22 requires for decisions with legal effect. Age, sex and
+      foreign-worker status are not model inputs; they are used only to audit approval rates.</div>
+
+    <details><summary>Raw API response</summary><pre id="raw"></pre></details>
+  </aside>
+</main>
+
+<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark).
+  A demonstration, not a lending decision. · <a href="https://github.com/shubhamyad86-ai/nyaya">Source on GitHub</a></footer>
+
+<script>
+const OPTIONS = __OPTIONS_JSON__;
+const SCORE_URL = __SCORE_URL__;
+const form = document.getElementById("form");
+const $ = (id) => document.getElementById(id);
+
+function el(tag, attrs = {}, children = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const c of children) n.append(c);
+  return n;
+}
+
+function buildForm() {
+  const presets = form.querySelector(".presets");
+  for (const name of Object.keys(OPTIONS.presets)) {
+    const b = el("button", { type: "button", text: name });
+    b.addEventListener("click", () => { fill(OPTIONS.presets[name]); scoreNow(); });
+    presets.append(b);
+  }
+  for (const section of OPTIONS.sections) {
+    const audit = section.fields.every((f) => !f.model_input);
+    const fs = el("fieldset", audit ? { class: "audit" } : {}, [el("legend", { text: section.title })]);
+    if (audit) fs.append(el("p", { class: "audit-note",
+      text: "Not used by the model. Kept only to check that approval rates are fair across groups." }));
+    const grid = el("div", { class: "grid" });
+    for (const f of section.fields) {
+      let input;
+      if (f.type === "choice") {
+        input = el("select", { name: f.name, id: f.name });
+        for (const o of f.options) input.append(el("option", { value: o, text: o }));
+      } else {
+        input = el("input", { name: f.name, id: f.name, type: "number", min: f.min, max: f.max,
+                              step: 1, inputmode: "numeric", required: "" });
+      }
+      const label = el("label", { for: f.name }, [el("span", { class: "name", text: f.label }), input]);
+      if (f.typical) label.append(el("span", { class: "hint",
+        text: `Typical: ${f.typical[0].toLocaleString()}–${f.typical[1].toLocaleString()}` }));
+      else if (f.type === "number") label.append(el("span", { class: "hint", text: `${f.min}–${f.max}` }));
+      grid.append(label);
+    }
+    fs.append(grid);
+    form.append(fs);
+  }
+}
+
+function fill(values) {
+  for (const [k, v] of Object.entries(values)) { const i = form.elements[k]; if (i) i.value = v; }
+}
+
+function readForm() {
+  const out = {};
+  for (const section of OPTIONS.sections) for (const f of section.fields) {
+    const v = form.elements[f.name].value;
+    out[f.name] = f.type === "number" ? Number(v) : v;
+  }
+  return out;
+}
+
+function showError(msg) {
+  $("verdict").innerHTML = "";
+  $("verdict").append(el("span", { class: "error", text: msg }));
+}
+
+function render(r) {
+  $("score").firstChild.textContent = r.credit_score.toFixed(1);
+  const badge = $("badge");
+  badge.className = "badge " + r.result;
+  badge.textContent = r.result;
+  $("mark").style.left = r.pass_mark + "%";
+  $("mark-label").textContent = "pass mark " + r.pass_mark;
+  $("dot").style.left = Math.max(0, Math.min(100, r.credit_score)) + "%";
+  const pd = (r.p_default * 100).toFixed(1);
+  $("verdict").textContent = r.result === "PASS"
+    ? `Approve. Estimated chance of default ${pd}%, below the ${(r.threshold * 100).toFixed(0)}% cut-off.`
+    : `Refer to an underwriter. Estimated chance of default ${pd}%, at or above the ${(r.threshold * 100).toFixed(0)}% cut-off.`;
+
+  const box = $("reasons");
+  box.innerHTML = "";
+  const max = Math.max(...r.reasons.map((x) => Math.abs(x.impact)), 1e-9);
+  for (const x of r.reasons) {
+    const w = (Math.abs(x.impact) / max) * 50;
+    const bar = el("i");
+    bar.style.width = w + "%";
+    bar.style.left = x.impact > 0 ? "50%" : (50 - w) + "%";
+    bar.style.background = x.impact > 0 ? "var(--up)" : "var(--down)";
+    box.append(el("div", { class: "reason", title: `${x.direction} (SHAP ${x.impact})` }, [
+      el("span", { text: x.label }), el("span", { class: "bar" }, [bar]),
+      el("span", { class: "val", text: showValue(x) }),
+    ]));
+  }
+  $("raw").textContent = JSON.stringify(r, null, 2);
+}
+
+// Engineered yes/no features arrive as 0/1, and repayment per month as a long decimal.
+const YES_NO = new Set(["has_checking_account", "no_savings", "delayed_before"]);
+function showValue(x) {
+  if (YES_NO.has(x.feature)) return x.value ? "yes" : "no";
+  if (typeof x.value === "number" && !Number.isInteger(x.value)) return x.value.toFixed(1);
+  return String(x.value);
+}
+
+let timer, seq = 0;
+async function scoreNow() {
+  if (!form.checkValidity()) { showError("Check the highlighted numbers: they are outside the allowed range."); return; }
+  const mine = ++seq;
+  try {
+    const res = await fetch(SCORE_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+                                         body: JSON.stringify(readForm()) });
+    const body = await res.json();
+    if (mine !== seq) return;               // a newer request is on its way
+    if (!res.ok) {
+      const d = body.detail ?? body.error;
+      showError(Array.isArray(d) ? d.map((x) => `${x.loc.at(-1)}: ${x.msg}`).join("; ") : (d || `Error ${res.status}`));
+      return;
+    }
+    render(body);
+  } catch (e) {
+    if (mine === seq) showError("Could not reach the scoring service.");
+  }
+}
+
+buildForm();
+fill(OPTIONS.presets["Borderline"]);
+form.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(scoreNow, 250); });
+form.addEventListener("submit", (e) => { e.preventDefault(); scoreNow(); });
+scoreNow();
+</script>
+</body>
+</html>

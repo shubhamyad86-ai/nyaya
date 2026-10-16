@@ -64,6 +64,10 @@ class ScoreResponse(BaseModel):
     p_default: float
     decision: Literal["approve", "refer_or_reject"]
     threshold: float
+    credit_score: float = Field(description="100 x (1 - P(default))")
+    pass_mark: float = Field(description="Lowest credit score that passes: 100 x (1 - threshold)")
+    result: Literal["PASS", "FAIL"]
+    requires_human_review: bool = Field(description="FAIL goes to a human (GDPR Art. 22)")
     model: str
     reasons: list[dict]
 
@@ -139,7 +143,25 @@ def nlp_sentiment(body: Sentences) -> list[dict]:
 def home():
     from fastapi.responses import RedirectResponse
 
-    return RedirectResponse("/docs")
+    return RedirectResponse("/app")
+
+
+@app.get("/app", include_in_schema=False)
+def scorer_page():
+    """Web form: choose an applicant's values and get a credit score with PASS or FAIL."""
+    from fastapi.responses import HTMLResponse
+
+    from compliance_ai.web import render_scorer
+
+    return HTMLResponse(render_scorer(score_url="/credit/score"))
+
+
+@app.get("/credit/options")
+def credit_options() -> dict:
+    """Allowed values for every applicant field, and which fields the model does not use."""
+    from compliance_ai.web import form_options
+
+    return form_options()
 
 
 class AgentRequest(BaseModel):

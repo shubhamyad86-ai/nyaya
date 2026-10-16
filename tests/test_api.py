@@ -46,9 +46,9 @@ def test_review_routes_risky_applicant_to_human(applicant, tfidf_index, monkeypa
     assert result["memo_mode"] == "template" and result["regulation_sources"]
 
 
-def test_root_redirects_to_docs():
+def test_root_redirects_to_credit_check_page():
     r = client.get("/", follow_redirects=False)
-    assert r.status_code in (302, 307) and r.headers["location"] == "/docs"
+    assert r.status_code in (302, 307) and r.headers["location"] == "/app"
 
 
 def test_sentiment_endpoint():

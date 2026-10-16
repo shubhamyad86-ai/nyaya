@@ -1,0 +1,89 @@
+name: Deploy to Azure
+
+# Manual: Actions -> Deploy to Azure -> Run workflow.
+# Trains the model, runs the tests, builds the Function zip and deploys it to the same app every time.
+# One-time setup (OpenID Connect, no passwords stored): see docs/AZURE_DEPLOY.md, "Deploy from GitHub".
+
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: Azure region (used only when the app is created)
+        default: germanywestcentral
+
+permissions:
+  id-token: write      # lets GitHub prove its identity to Azure (OIDC)
+  contents: read
+
+concurrency: deploy-azure
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: azure
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP || 'rg-compliance-ai' }}
+      APP: ${{ vars.AZURE_FUNCTION_APP }}
+      STORAGE: ${{ vars.AZURE_STORAGE_ACCOUNT }}
+      LOCATION: ${{ inputs.location }}
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check settings
+        run: |
+          if [ -z "$APP" ] || [ -z "$STORAGE" ]; then
+            echo "::error::Set the repository variables AZURE_FUNCTION_APP and AZURE_STORAGE_ACCOUNT (docs/AZURE_DEPLOY.md)"
+            exit 1
+          fi
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Train with the same Python as the existing app, so the pinned packages install there.
+      - name: Pick the Python version
+        id: py
+        run: |
+          v=$(az functionapp show -g "$RG" -n "$APP" --query functionAppConfig.runtime.version -o tsv 2>/dev/null || true)
+          echo "version=${v:-3.11}" >> "$GITHUB_OUTPUT"
+          echo "Python ${v:-3.11}"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.py.outputs.version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          pip install -r requirements.txt pytest httpx
+          pip install -e .
+
+      - name: Train the credit model on the real data
+        run: |
+          python scripts/download_data.py
+          python -m compliance_ai.credit.train
+
+      - name: Test the scoring code and the Function package
+        run: pytest -q tests/test_credit.py tests/test_api.py tests/test_azure_function.py tests/test_web.py
+
+      - name: Build the zip
+        run: |
+          python deploy/azure_function/build.py
+          cp deploy/azure_function/deploy_azure.sh dist/
+
+      - name: Deploy and smoke-test
+        run: bash dist/deploy_azure.sh
+
+      - name: Summary
+        if: success()
+        run: |
+          host=$(az functionapp show -g "$RG" -n "$APP" --query defaultHostName -o tsv)
+          {
+            echo "### Deployed"
+            echo "- Credit check page: https://$host/api/app"
+            echo "- Health: https://$host/api/health"
+            echo "- Model: $(curl -s https://$host/api/health)"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -42,7 +42,8 @@ def call(handler, method: str, body=None):
 def test_package_contents_and_pins(package):
     pkg, names = package
     for needed in ["function_app.py", "host.json", "config.yaml", "requirements.txt", ".python_version",
-                   "compliance_ai/credit/predict.py", "models/credit_model.joblib",
+                   "compliance_ai/credit/predict.py", "compliance_ai/web/scorer.html",
+                   "models/credit_model.joblib",
                    "models/reference_profile.json"]:
         assert needed in names
     reqs = (pkg / "requirements.txt").read_text()
@@ -60,6 +61,11 @@ def test_handlers(package):
     assert status == 200 and 0 <= body["p_default"] <= 1
     assert call(fa.score_applicant, "POST", [applicant])[0] == 400
     assert call(fa.score_applicant, "POST", {**applicant, "age": 5})[0] == 422
+    status, body = call(fa.scorer_page_score, "POST", applicant)
+    assert status == 200 and body["result"] in {"PASS", "FAIL"} and 0 <= body["credit_score"] <= 100
+    get_page = fa.scorer_page.build().get_user_function()
+    page = get_page(func.HttpRequest(method="GET", url="/api/app", body=b""))
+    assert page.status_code == 200 and b'"/api/app/score"' in page.get_body()
     status, body = call(fa.drift, "POST", batch)
     assert status == 200 and body["overall"] in {"ok", "watch", "alert"}
     assert call(fa.drift, "POST", {"applicants": batch["applicants"][:5]})[0] == 422

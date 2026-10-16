@@ -4,8 +4,10 @@ Build and deploy: see docs/AZURE_DEPLOY.md
     python deploy/azure_function/build.py     # -> dist/compliance_ai_function.zip
     bash deploy_azure.sh                      # in Azure Cloud Shell
 
-Routes (function key required except /health)
+Routes (function key required except /health and the public demo page)
     GET  /api/health                      -> model name, threshold, training time
+    GET  /api/app                         -> web page: choose an applicant's values, see score + PASS/FAIL
+    POST /api/app/score                   -> the page's scoring call (same result as /api/score)
     POST /api/score   one applicant       -> P(default), decision and reason codes
     POST /api/drift   {"applicants": [...]} (30+) -> PSI drift report against the training data
 """
@@ -37,8 +39,25 @@ def health(req: func.HttpRequest) -> func.HttpResponse:
                   "threshold": round(float(bundle["threshold"]), 3), "trained_at": bundle["trained_at"]})
 
 
+@app.route(route="app", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def scorer_page(req: func.HttpRequest) -> func.HttpResponse:
+    from compliance_ai.web import render_scorer
+
+    return func.HttpResponse(render_scorer(score_url="/api/app/score"), mimetype="text/html")
+
+
+@app.route(route="app/score", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
+def scorer_page_score(req: func.HttpRequest) -> func.HttpResponse:
+    """Public twin of /api/score for the demo page. It stores nothing; scale is capped in deploy_azure.sh."""
+    return _score(req)
+
+
 @app.route(route="score", methods=["POST"])
 def score_applicant(req: func.HttpRequest) -> func.HttpResponse:
+    return _score(req)
+
+
+def _score(req: func.HttpRequest) -> func.HttpResponse:
     from compliance_ai.credit.data import DataValidationError
     from compliance_ai.credit.predict import score
 
@@ -52,7 +71,7 @@ def score_applicant(req: func.HttpRequest) -> func.HttpResponse:
         result = score([applicant])[0]
     except (DataValidationError, KeyError) as exc:
         return _error(f"Invalid applicant: {exc}", 422)
-    logging.info("scored applicant: p_default=%.3f decision=%s", result["p_default"], result["decision"])
+    logging.info("scored applicant: score=%.1f result=%s", result["credit_score"], result["result"])
     return _json(result)
 
 
