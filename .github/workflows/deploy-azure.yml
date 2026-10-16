@@ -67,7 +67,7 @@ jobs:
           python -m compliance_ai.credit.train
 
       - name: Test the scoring code and the Function package
-        run: pytest -q tests/test_credit.py tests/test_api.py tests/test_azure_function.py tests/test_web.py
+        run: pytest -q tests/test_credit.py tests/test_api.py tests/test_azure_function.py tests/test_web.py tests/test_batch.py
 
       - name: Build the zip
         run: |

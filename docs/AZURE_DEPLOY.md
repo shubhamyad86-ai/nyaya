@@ -12,6 +12,8 @@ scoring code. The RAG assistant, the agent and Ollama stay on your PC (they need
 | Route | Auth | Purpose |
 |---|---|---|
 | `GET /api/app` | none | **credit check page**: choose the applicant's values, get score, PASS/FAIL and reasons |
+| `GET /api/batch` | none | **file upload page**: CSV, Excel or PDF of up to 3,000 applicants, EU and India checks |
+| `POST /api/batch/check` | none | the upload page's call; the file is processed in memory and not stored |
 | `POST /api/app/score` | none | the page's scoring call; stores nothing, and the app is capped at 2 instances |
 | `GET /api/health` | none | model name, threshold, training time |
 | `POST /api/score` | function key | one applicant → P(default), credit score, PASS/FAIL, top reason codes |

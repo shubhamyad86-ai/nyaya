@@ -1,0 +1,52 @@
+# EU policy pack: what the law requires around an automated credit decision, and how Nyaya checks it.
+# Each check names a function in compliance_ai/policies/__init__.py. Edit the wording or the
+# thresholds here; a compliance team can review this file without reading Python.
+code: EU
+name: European Union
+applies_to: Consumer credit decisions about people in the EU
+short_actions:
+  PASS: Approve
+  FAIL: Human review
+actions:
+  PASS: Approve
+  FAIL: Refer to a human underwriter before any rejection; give the main reasons and a way to contest
+notices:
+  - Credit scoring of natural persons is high-risk AI under the EU AI Act (Annex III, point 5(b)).
+    Obligations for high-risk systems apply in stages; plan for them now.
+  - The four-fifths rule used below is a screening metric, not a legal test in EU law. A failing
+    ratio means the policy needs a documented review, not that discrimination is proven.
+checks:
+  - id: human_review
+    title: No solely automated rejection
+    law: GDPR Art. 22(1) and (3); Consumer Credit Directive (EU) 2023/2225, Art. 18; EU AI Act Art. 14
+    check: every_fail_has_human_review
+  - id: explanation
+    title: Main reasons given for every decision
+    law: GDPR Art. 13(2)(f), 15(1)(h) and 22(3); Consumer Credit Directive (EU) 2023/2225, Art. 18
+    check: every_decision_has_reasons
+  - id: sensitive_inputs
+    title: Sex, age and nationality are not model inputs
+    law: EU Charter of Fundamental Rights Art. 21 (non-discrimination); EU AI Act Art. 10(2)(f)-(g)
+    check: protected_attributes_not_inputs
+  - id: bias
+    title: Approval rates compared across groups (bias examination)
+    law: EU AI Act Art. 10(2)(f)-(g); four-fifths rule as screening metric
+    check: four_fifths
+    min_ratio: 0.8
+  - id: data_quality
+    title: Input data complete and correct
+    law: EU AI Act Art. 10(3); GDPR Art. 5(1)(d) (accuracy)
+    check: invalid_share
+    max_invalid_share: 0.05
+  - id: monitoring
+    title: Applicants still look like the training data (drift)
+    law: EU AI Act Art. 15 (accuracy, robustness) and Art. 72 (post-market monitoring)
+    check: drift
+  - id: logging
+    title: Decision batch logged for audit
+    law: EU AI Act Art. 12 and Art. 26(6) (logs kept by the deployer)
+    check: audit_logged
+  - id: minimisation
+    title: Uploaded file not stored, only its fingerprint
+    law: GDPR Art. 5(1)(c) (data minimisation) and 5(1)(e) (storage limitation)
+    check: file_not_stored

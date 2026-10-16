@@ -36,6 +36,14 @@ Run `start_api.bat` (or `uvicorn compliance_ai.api:app`) and open `http://127.0.
 page is part of the Azure deployment at `/api/app`. Three real applicants from the data are one click
 away: strong, borderline and high risk.
 
+**Check a whole file.** At `http://127.0.0.1:8000/batch`, upload a CSV, Excel or PDF with up to
+3,000 applicants. Each one gets a score, PASS or FAIL and the action the rules require, rows with
+mistakes are listed with what to fix, and the batch is checked against **EU** (GDPR, EU AI Act,
+Consumer Credit Directive) and **Indian** (RBI Fair Practices Code, DPDP Act 2023) rules. A 3,000-row
+file takes about 3 seconds. Details: [docs/BATCH_CHECK.md](docs/BATCH_CHECK.md).
+
+![Batch check](docs/screenshots/batch_check.png)
+
 How the score works: credit score = 100 × (1 − probability of default). The pass mark is the approval
 threshold that gave the lowest cost in cross-validation, put on the same scale (currently 77). The cost
 counts a wrongly approved defaulter five times as heavily as a wrongly rejected good customer, which is
@@ -69,9 +77,9 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Financial sentiment** | Classifies 3,448 expert-labelled news sentences, comparing TF-IDF, frozen MiniLM embeddings and DistilBERT fine-tuned in PyTorch. |
 | **A/B testing** | A champion-vs-challenger experiment for the credit model: power analysis, hash-based random assignment, a sample-ratio check, significance tests with confidence intervals, and a paired comparison on the same applicants. |
 | **Credit check page** | A web form for one applicant: every field from the dataset, a 0-100 score with PASS or FAIL, and the SHAP reasons in plain language. Age, sex and foreign-worker status are collected only for the fairness audit. |
-| **Batch checks** | Scores a CSV of new applicants in one go, flags every decision that needs a human under GDPR Article 22, and audits the batch for fairness and drift. |
+| **Batch checks** | Upload a CSV, Excel or PDF of up to 3,000 applicants. Every row gets a score, PASS/FAIL and the action EU or Indian rules require; bad rows are listed with what to fix; the batch runs 16 policy checks (GDPR, EU AI Act, Consumer Credit Directive, RBI Fair Practices Code, DPDP Act) with an audit log that keeps no personal data. |
 | **Databricks job** | A 5-task scheduled job deployed as code (Asset Bundle): incremental `COPY INTO` ingestion, a data-quality gate, model registration in Unity Catalog with champion/challenger aliases, batch scoring and drift and fairness monitoring. |
-| **Engineering** | FastAPI service, 64 tests with GitHub Actions CI, MLflow tracking, Docker, and an Azure Functions deployment with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords). |
+| **Engineering** | FastAPI service, 79 tests with GitHub Actions CI, MLflow tracking, Docker, and an Azure Functions deployment with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords). |
 
 ## How it fits together
 
@@ -242,7 +250,8 @@ python -m compliance_ai.rag.evaluate
 python -m compliance_ai.nlp.train --method tfidf_baseline
 python scripts/drift_demo.py
 python scripts/ab_test.py                              # champion vs challenger A/B test
-python scripts/check_csv.py my_applicants.csv          # score and audit a CSV of new applicants
+python scripts/check_csv.py my_applicants.pdf          # score a CSV/Excel/PDF and check EU + India rules
+python scripts/make_samples.py                         # sample upload files in data/samples/
 python scripts/update_docs.py                          # write the results into this README
 pytest -q
 
@@ -260,6 +269,8 @@ still returns the relevant passages of the law.
 | `GET /app` | The credit check page |
 | `POST /credit/score` | Probability of default, credit score 0-100, PASS or FAIL, and the top four reasons |
 | `GET /credit/options` | Allowed values for every applicant field |
+| `GET /batch` | The file upload page |
+| `POST /batch/check` | A CSV, Excel or PDF of up to 3,000 applicants → results per applicant and the EU / India policy checks |
 | `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
 | `POST /agent/review` | The agent's review, its full tool trace and a citation check |
 | `POST /compliance/ask` | An answer from GDPR or the EU AI Act with checked citations |
@@ -289,17 +300,19 @@ src/compliance_ai/
   agent.py       tool-calling review agent with guardrails
   monitoring.py  PSI + chi-square drift checks
   experiment.py  A/B testing: assignment, power analysis, significance tests
-  web/           credit check page (shared by FastAPI and Azure)
+  batch.py       read CSV / Excel / PDF, validate rows, score, fairness, drift
+  policies/      EU and India rule packs (YAML) and their automatic checks, audit log
+  web/           credit check and upload pages (shared by FastAPI and Azure)
   api.py         FastAPI service
 databricks/      Asset Bundle: job and Unity Catalog definitions, five job notebooks, shared rules
 notebooks/       Colab GPU run (sentiment) · Databricks quick-start notebook
 spark/           bronze → silver (+ quarantine) → gold with Delta Lake
 deploy/          Azure Functions app, build and deploy scripts (Cloud Shell and GitHub Actions)
-scripts/         download_data · eda · drift_demo · ab_test · check_csv · compare_retrieval · update_docs
+scripts/         download_data · eda · drift_demo · ab_test · check_csv · make_samples · compare_retrieval · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
-docs/            model card · Azure guide · Databricks guide
-tests/           64 tests (unit, API, web page, agent, Spark, Databricks rules, Azure handlers, A/B statistics)
+docs/            model card · batch check guide · Azure guide · Databricks guide
+tests/           79 tests (unit, API, web pages, file upload and policies, agent, Spark, Databricks rules, Azure handlers, A/B statistics)
 ```
 
 The full model documentation, including limitations, is in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).

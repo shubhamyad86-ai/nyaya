@@ -1,0 +1,51 @@
+# India policy pack: lender rules from the Reserve Bank of India (RBI) and the Digital Personal
+# Data Protection Act, 2023 (DPDP Act), and how Nyaya checks them.
+code: IN
+name: India
+applies_to: Loan decisions by RBI-regulated lenders about people in India
+short_actions:
+  PASS: Approve
+  FAIL: Officer review, written reasons
+actions:
+  PASS: Approve
+  FAIL: Refer to a credit officer; if declined, tell the applicant the main reasons in writing
+notices:
+  - The demo model was trained on German applicants with amounts in Deutsche Mark. Before using it
+    for Indian applicants, retrain and validate it on Indian data and in rupees.
+  - Digital loans also need a Key Fact Statement with the annual percentage rate and a grievance
+    redressal officer (RBI digital lending rules). Those are product steps outside this check.
+checks:
+  - id: rejection_reasons
+    title: Main reasons for rejection available in writing
+    law: RBI Fair Practices Code for lenders (reasons for rejection to be conveyed in writing)
+    check: every_decision_has_reasons
+  - id: non_discrimination
+    title: Sex is not a model input
+    law: RBI Fair Practices Code (no discrimination on grounds of sex, caste or religion)
+    check: protected_attributes_not_inputs
+  - id: bias
+    title: Approval rates compared across groups
+    law: RBI Fair Practices Code; four-fifths rule as screening metric
+    check: four_fifths
+    min_ratio: 0.8
+  - id: human_review
+    title: Refused applications reviewed by a person
+    law: Good practice; not an explicit legal requirement in India today
+    check: every_fail_has_human_review
+  - id: data_accuracy
+    title: Data used for the decision is complete, accurate and consistent
+    law: DPDP Act 2023, Section 8(3)
+    check: invalid_share
+    max_invalid_share: 0.05
+  - id: monitoring
+    title: Applicants still look like the training data (drift)
+    law: Model risk management good practice
+    check: drift
+  - id: retention
+    title: Uploaded file not stored, only its fingerprint
+    law: DPDP Act 2023, Section 8(7) (erase data once the purpose is served)
+    check: file_not_stored
+  - id: logging
+    title: Decision batch logged for audit and grievances
+    law: DPDP Act 2023, Section 13 (grievance redressal); RBI Fair Practices Code
+    check: audit_logged

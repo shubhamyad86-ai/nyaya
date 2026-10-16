@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyaya Batch Check</title>
+<style>
+  :root {
+    --bg: #F5F3EE; --panel: #FFFFFF; --ink: #17213A; --muted: #5D6478; --line: #E2DFD6;
+    --brand: #1B2A4A; --accent: #D9731A; --pass: #1E7A4C; --pass-bg: #E5F3EA;
+    --fail: #B3261E; --fail-bg: #FBE9E7; --warn: #8A5A00; --warn-bg: #FFF3D6;
+    --info: #3B5B8C; --info-bg: #E8EEF8; --field: #FBFAF7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10141F; --panel: #181E2C; --ink: #E8EAF0; --muted: #9AA1B4; --line: #2A3245;
+      --brand: #C9D4F0; --accent: #F0954A; --pass: #5CC98E; --pass-bg: #163325;
+      --fail: #F2887F; --fail-bg: #3A1D1B; --warn: #F2C46B; --warn-bg: #3A2E14;
+      --info: #9CB8E8; --info-bg: #1C2840; --field: #121827;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  header { padding-top: 22px; }
+  nav { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+  nav a { padding: 6px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 14px; }
+  nav a.on { background: var(--panel); color: var(--brand); font-weight: 600; border: 1px solid var(--line); }
+  .brand { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { margin: 4px 0 6px; font-size: 28px; color: var(--brand); letter-spacing: -.01em; }
+  header p { margin: 0 0 16px; color: var(--muted); max-width: 75ch; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
+          margin-bottom: 18px; }
+  h2 { font-size: 17px; margin: 0 0 12px; color: var(--brand); }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 16px 0 8px; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 26px; text-align: center;
+          background: var(--field); cursor: pointer; transition: border-color .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); }
+  .drop strong { display: block; font-size: 17px; margin-bottom: 4px; }
+  .drop span { color: var(--muted); font-size: 14px; }
+  .file-name { margin-top: 10px; font-weight: 600; overflow-wrap: anywhere; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; margin-top: 14px; }
+  .controls label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  button.primary { background: var(--brand); color: var(--panel); border: 0; border-radius: 10px; padding: 10px 20px;
+                   font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary:disabled { opacity: .5; cursor: default; }
+  button.link, a.link { background: none; border: 0; padding: 0; color: var(--brand); text-decoration: underline;
+                        font: inherit; cursor: pointer; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  .status { margin-top: 12px; min-height: 1.5em; }
+  .error { color: var(--fail); font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .tile span { display: block; font-size: 13px; color: var(--muted); }
+  .tile strong { font-size: 28px; font-variant-numeric: tabular-nums; }
+  .tile.pass strong { color: var(--pass); } .tile.fail strong { color: var(--fail); }
+  .tile.warn strong { color: var(--warn); }
+  .packs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 18px; }
+  .pack-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .pill { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px;
+          border-radius: 999px; white-space: nowrap; }
+  .pill.pass { color: var(--pass); background: var(--pass-bg); } .pill.fail { color: var(--fail); background: var(--fail-bg); }
+  .pill.warn { color: var(--warn); background: var(--warn-bg); } .pill.info { color: var(--info); background: var(--info-bg); }
+  .check { display: grid; grid-template-columns: 62px 1fr; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .check .title { font-weight: 600; }
+  .check .law { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .check .finding { font-size: 14px; }
+  .notice { font-size: 13px; color: var(--muted); background: var(--field); border: 1px solid var(--line);
+            border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+  .action { font-size: 13px; margin: 6px 0 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .seg button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 5px 12px;
+                font: inherit; font-size: 14px; cursor: pointer; }
+  .seg button:first-child { border-radius: 8px 0 0 8px; } .seg button:last-child { border-radius: 0 8px 8px 0; }
+  .seg button.on { background: var(--brand); color: var(--panel); border-color: var(--brand); }
+  input[type=search] { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field);
+                       color: var(--ink); font: inherit; font-size: 14px; min-width: 200px; }
+  .table-wrap { overflow-x: auto; }
+  .reasons { font-size: 13px; color: var(--muted); }
+  .up { color: var(--accent); } .down { color: var(--info); }
+  .pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 10px; font-size: 14px; }
+  .pager button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px;
+                  padding: 4px 10px; cursor: pointer; font: inherit; }
+  .downloads { display: flex; flex-wrap: wrap; gap: 10px; }
+  .downloads button { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 10px;
+                      padding: 8px 14px; font: inherit; cursor: pointer; }
+  .downloads button:hover { border-color: var(--accent); }
+  footer { padding: 8px 24px 32px; font-size: 13px; color: var(--muted); max-width: 1180px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  @media (max-width: 900px) {
+    .wrap { padding: 0 16px; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid2 { grid-template-columns: minmax(0, 1fr); }
+    .packs { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav, #upload, .toolbar, .pager, .downloads, footer { display: none !important; }
+    body { background: #fff; color: #000; }
+    .card, .tile { break-inside: avoid; border-color: #ccc; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <nav><a href="__SINGLE_URL__">One applicant</a><a class="on" href="__BATCH_URL__">Upload a file</a></nav>
+  <div class="brand">Nyaya · explainable credit risk</div>
+  <h1>Batch check</h1>
+  <p>Upload a CSV, Excel or PDF file with up to 3,000 applicants. Every applicant gets a credit score
+     with PASS or FAIL and the reasons, and the whole batch is checked against EU and Indian lending
+     and data-protection rules.</p>
+</header>
+
+<section class="card" id="upload">
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a file">
+    <strong>Drop a file here or click to choose</strong>
+    <span>CSV, Excel (.xlsx) or PDF · up to 3,000 applicants · 15 MB</span>
+    <div class="file-name" id="file-name"></div>
+  </div>
+  <input type="file" id="file" accept=".csv,.txt,.xlsx,.pdf" hidden>
+  <div class="controls">
+    <span class="muted">Check against:</span>
+    <label><input type="checkbox" name="j" value="EU" checked> EU rules</label>
+    <label><input type="checkbox" name="j" value="IN" checked> Indian rules</label>
+    <button class="primary" id="run" disabled>Check file</button>
+    <span class="small muted">No file? <button class="link" id="sample">Try the sample (203 applicants)</button>
+      · <a class="link" href="__TEMPLATE_URL__" download="nyaya_template.csv">Download the CSV template</a></span>
+  </div>
+  <div class="status" id="status" aria-live="polite"></div>
+</section>
+
+<div id="results" class="hidden">
+  <section class="tiles" aria-label="Summary" id="tiles"></section>
+  <p class="small muted" id="meta"></p>
+
+  <section class="packs" id="packs"></section>
+
+  <div class="grid2">
+    <section class="card"><h2>Fairness audit</h2>
+      <p class="small muted">Approval rate per group and its ratio to the best group. Below 0.80 fails the
+        four-fifths screening rule. The model never sees these attributes.</p>
+      <div class="table-wrap"><table id="fairness"></table></div></section>
+    <section class="card"><h2>Drift against the training data</h2>
+      <div id="drift"></div>
+      <div id="accuracy"></div></section>
+  </div>
+
+  <section class="card">
+    <h2>Applicants</h2>
+    <div class="toolbar">
+      <div class="seg" id="filter" role="group" aria-label="Filter">
+        <button data-f="all" class="on">All</button><button data-f="PASS">PASS</button>
+        <button data-f="FAIL">FAIL</button><button data-f="invalid">Invalid rows</button>
+      </div>
+      <input type="search" id="search" placeholder="Search reference or row">
+    </div>
+    <div class="table-wrap"><table id="table"></table></div>
+    <div class="pager"><span id="page-info"></span><button id="prev">Previous</button><button id="next">Next</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Download</h2>
+    <div class="downloads">
+      <button id="dl-results">Results for every applicant (CSV)</button>
+      <button id="dl-invalid">Rows to correct (CSV)</button>
+      <button id="dl-print">Compliance report (print or save as PDF)</button>
+    </div>
+    <p class="small muted">The uploaded file is not stored. The audit log keeps only its fingerprint, the
+      model version, the decision per row and the check results.</p>
+  </section>
+</div>
+</div>
+<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark). The checks
+  show whether the decision process meets each rule; they are not legal advice. ·
+  <a href="https://github.com/shubhamyad86-ai/nyaya" style="color:var(--brand)">Source on GitHub</a></footer>
+
+<script>
+const CHECK_URL = __CHECK_URL__;
+const SAMPLE_URL = __SAMPLE_URL__;
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Number(n).toLocaleString();
+const pct = (x) => x == null ? "–" : (x * 100).toFixed(1) + "%";
+let chosen = null, report = null, view = [], page = 0;
+const PAGE = 50;
+
+function el(tag, attrs = {}, children = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "text") n.textContent = v; else if (k === "class") n.className = v; else n.setAttribute(k, v);
+  }
+  for (const c of children) n.append(c);
+  return n;
+}
+
+function choose(file) {
+  chosen = file;
+  $("file-name").textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(0)} KB` : "";
+  $("run").disabled = !file;
+  $("status").textContent = "";
+}
+$("drop").addEventListener("click", () => $("file").click());
+$("drop").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+$("file").addEventListener("change", (e) => choose(e.target.files[0]));
+for (const ev of ["dragenter", "dragover"]) $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); });
+for (const ev of ["dragleave", "drop"]) $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.remove("over"); });
+$("drop").addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) choose(e.dataTransfer.files[0]); });
+$("sample").addEventListener("click", async () => {
+  const res = await fetch(SAMPLE_URL);
+  choose(new File([await res.blob()], "sample_applicants.csv", { type: "text/csv" }));
+  run();
+});
+$("run").addEventListener("click", run);
+
+async function run() {
+  if (!chosen) return;
+  const j = [...document.querySelectorAll("input[name=j]:checked")].map((x) => x.value);
+  if (!j.length) { $("status").innerHTML = ""; $("status").append(el("span", { class: "error", text: "Choose at least one set of rules." })); return; }
+  $("run").disabled = true;
+  $("status").textContent = "Checking… a 3,000-row file takes about half a minute.";
+  try {
+    const url = `${CHECK_URL}?jurisdictions=${j.join(",")}&filename=${encodeURIComponent(chosen.name)}`;
+    const res = await fetch(url, { method: "POST", body: chosen, headers: { "Content-Type": "application/octet-stream" } });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || body.error || `Error ${res.status}`);
+    report = body;
+    render();
+    $("status").textContent = "";
+    $("results").scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    $("status").innerHTML = "";
+    $("status").append(el("span", { class: "error", text: e.message === "Failed to fetch" ? "Could not reach the service." : e.message }));
+  } finally {
+    $("run").disabled = !chosen;
+  }
+}
+
+function tile(label, value, cls = "") { return el("div", { class: "tile " + cls }, [el("span", { text: label }), el("strong", { text: value })]); }
+
+function render() {
+  const s = report.summary;
+  $("results").classList.remove("hidden");
+  const tiles = $("tiles"); tiles.innerHTML = "";
+  tiles.append(tile("Applicants in file", fmt(s.rows)), tile("PASS", fmt(s.passed), "pass"),
+               tile("FAIL → human review", fmt(s.failed), "fail"), tile("Invalid rows", fmt(s.invalid), s.invalid ? "warn" : ""),
+               tile("Approval rate", pct(s.approval_rate)));
+  $("meta").textContent = `${report.file.name} · checked ${new Date(report.checked_at).toLocaleString()} · batch ${report.batch_id} · model ${report.model.name}, pass mark ${report.model.pass_mark} · audit log: ${report.audit_log ? report.audit_log.where : "off"}`;
+
+  const packs = $("packs"); packs.innerHTML = "";
+  const label = { pass: "Pass", warn: "Review", fail: "Fail", info: "Info" };
+  for (const p of report.policies) {
+    const card = el("section", { class: "card" }, [
+      el("div", { class: "pack-head" }, [el("h2", { text: `${p.name} rules` }), el("span", { class: "pill " + p.overall, text: label[p.overall] })]),
+      el("p", { class: "small muted", text: `${p.applies_to}. ${p.counts.pass} passed, ${p.counts.warn} to review, ${p.counts.fail} failed.` }),
+      el("p", { class: "action", text: `PASS → ${p.actions.PASS}. FAIL → ${p.actions.FAIL}.` }),
+    ]);
+    for (const c of p.checks) {
+      card.append(el("div", { class: "check" }, [
+        el("div", {}, [el("span", { class: "pill " + c.status, text: label[c.status] })]),
+        el("div", {}, [el("div", { class: "title", text: c.title }), el("div", { class: "finding", text: c.finding }),
+                       el("div", { class: "law", text: c.law })]),
+      ]));
+    }
+    for (const n of p.notices) card.append(el("div", { class: "notice", text: n }));
+    packs.append(card);
+  }
+
+  const f = $("fairness"); f.innerHTML = "";
+  f.append(el("tr", {}, ["Attribute", "Group", "Applicants", "Approval", "Ratio"].map((h, i) => el("th", { class: i > 1 ? "num" : "", text: h }))));
+  for (const a of report.fairness) for (const g of a.groups) {
+    const bad = g.disparate_impact != null && g.disparate_impact < 0.8;
+    f.append(el("tr", {}, [el("td", { text: a.label }), el("td", { text: g.group.replace("_", " ") }), el("td", { class: "num", text: fmt(g.applicants) }),
+      el("td", { class: "num", text: pct(g.approval_rate) }),
+      el("td", { class: "num", text: g.disparate_impact == null ? "–" : g.disparate_impact.toFixed(2) + (bad ? " ⚠" : "") })]));
+  }
+  if (report.fairness.some((a) => a.small_group)) f.after(el("p", { class: "small muted", text: "Groups under 20 applicants give noisy ratios." }));
+
+  const d = $("drift"); d.innerHTML = "";
+  if (!report.drift) d.append(el("p", { class: "muted", text: `Needs at least ${report.drift_min_rows} valid applicants.` }));
+  else {
+    const cls = { ok: "pass", watch: "warn", alert: "fail" }[report.drift.overall];
+    d.append(el("p", {}, [el("span", { class: "pill " + cls, text: report.drift.overall }), document.createTextNode(" " + report.drift.summary)]));
+    const t = el("table"); t.append(el("tr", {}, [el("th", { text: "Feature" }), el("th", { class: "num", text: "PSI" }), el("th", { text: "Status" })]));
+    for (const x of report.drift.features.slice(0, 6)) t.append(el("tr", {}, [el("td", { text: x.feature }), el("td", { class: "num", text: x.psi.toFixed(3) }), el("td", { text: x.status.replace("_", " ") })]));
+    d.append(t, el("p", { class: "small muted", text: "PSI below 0.10 is stable, 0.10–0.25 worth watching, above 0.25 a real shift." }));
+  }
+  const acc = $("accuracy"); acc.innerHTML = "";
+  if (report.accuracy) {
+    const a = report.accuracy;
+    acc.append(el("h3", { text: "Outcomes in the file" }), el("p", { class: "small", text:
+      `${fmt(a.labelled)} applicants have a known outcome. Accuracy ${pct(a.accuracy)}, defaulters caught ${pct(a.defaulters_caught)}, default rate among approved ${pct(a.default_rate_among_approved)}.` }));
+  }
+  setFilter("all");
+}
+
+function rowsFor(filter) {
+  if (filter === "invalid") return report.invalid_rows.map((r) => ({ ...r, invalid: true }));
+  return report.applicants.filter((a) => filter === "all" || a.result === filter);
+}
+function setFilter(fil) {
+  for (const b of $("filter").children) b.classList.toggle("on", b.dataset.f === fil);
+  $("filter").dataset.current = fil;
+  applySearch();
+}
+function applySearch() {
+  const q = $("search").value.trim().toLowerCase();
+  view = rowsFor($("filter").dataset.current).filter((r) => !q || String(r.reference).toLowerCase().includes(q) || String(r.row) === q);
+  page = 0; drawTable();
+}
+$("filter").addEventListener("click", (e) => { if (e.target.dataset.f) setFilter(e.target.dataset.f); });
+$("search").addEventListener("input", applySearch);
+$("prev").addEventListener("click", () => { if (page > 0) { page--; drawTable(); } });
+$("next").addEventListener("click", () => { if ((page + 1) * PAGE < view.length) { page++; drawTable(); } });
+
+function drawTable() {
+  const t = $("table"); t.innerHTML = "";
+  const invalid = $("filter").dataset.current === "invalid";
+  const codes = report.policies.map((p) => p.code);
+  const head = invalid ? ["Row", "Reference", "What to fix"] : ["Row", "Reference", "Score", "Result", "Main reasons", ...codes.map((c) => `Action (${c})`)];
+  t.append(el("tr", {}, head.map((h, i) => el("th", { class: !invalid && i === 2 ? "num" : "", text: h }))));
+  for (const r of view.slice(page * PAGE, (page + 1) * PAGE)) {
+    if (invalid) { t.append(el("tr", {}, [el("td", { text: r.row }), el("td", { text: r.reference || "–" }), el("td", { text: r.issues })])); continue; }
+    const reasons = el("div", { class: "reasons" });
+    for (const x of r.reasons.slice(0, 2)) reasons.append(el("div", {}, [el("span", { class: x.direction.startsWith("increases") ? "up" : "down", text: x.direction.startsWith("increases") ? "▲ " : "▼ " }), document.createTextNode(`${x.label}: ${x.value}`)]));
+    t.append(el("tr", {}, [el("td", { text: r.row }), el("td", { text: r.reference || "–" }), el("td", { class: "num", text: r.credit_score.toFixed(1) }),
+      el("td", {}, [el("span", { class: "pill " + (r.result === "PASS" ? "pass" : "fail"), text: r.result })]), el("td", {}, [reasons]),
+      ...codes.map((c) => el("td", { class: "small", text: report.policies.find((p) => p.code === c).short_actions[r.result] }))]));
+  }
+  if (!view.length) t.append(el("tr", {}, [el("td", { colspan: head.length, class: "muted", text: "Nothing to show." })]));
+  const end = Math.min((page + 1) * PAGE, view.length);
+  $("page-info").textContent = view.length ? `${page * PAGE + 1}–${end} of ${fmt(view.length)}` : "";
+  $("prev").disabled = page === 0; $("next").disabled = end >= view.length;
+}
+
+function csv(rows) {
+  const esc = (v) => { const s = v == null ? "" : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  return rows.map((r) => r.map(esc).join(",")).join("\r\n");
+}
+function download(name, text) {
+  const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + text], { type: "text/csv" })), download: name });
+  document.body.append(a); a.click(); a.remove();
+}
+$("dl-results").addEventListener("click", () => {
+  const codes = report.policies.map((p) => p.code);
+  const rows = [["row", "reference", "credit_score", "result", "p_default", "requires_human_review", "reason_1", "reason_2", "reason_3", "reason_4", ...codes.map((c) => `action_${c}`)]];
+  for (const a of report.applicants) rows.push([a.row, a.reference, a.credit_score, a.result, a.p_default, a.requires_human_review,
+    ...[0, 1, 2, 3].map((i) => a.reasons[i] ? `${a.reasons[i].label}: ${a.reasons[i].value} (${a.reasons[i].direction})` : ""), ...codes.map((c) => a.actions[c])]);
+  download(`nyaya_results_${report.batch_id}.csv`, csv(rows));
+});
+$("dl-invalid").addEventListener("click", () => {
+  download(`nyaya_rows_to_fix_${report.batch_id}.csv`, csv([["row", "reference", "issues"], ...report.invalid_rows.map((r) => [r.row, r.reference, r.issues])]));
+});
+$("dl-print").addEventListener("click", () => window.print());
+</script>
+</body>
+</html>

@@ -21,3 +21,4 @@ derby.log
 
 # Azure Function package (python deploy/azure_function/build.py)
 dist/
+reports/audit_log.jsonl

@@ -5,3 +5,4 @@ ruff>=0.6
 # Local Spark/Delta pipeline (needs Java 11+; Databricks already provides these)
 pyspark>=3.5,<4
 delta-spark>=3.2,<4
+reportlab>=4.0              # sample PDF generator (scripts/make_samples.py)

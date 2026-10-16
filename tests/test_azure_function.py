@@ -66,6 +66,13 @@ def test_handlers(package):
     get_page = fa.scorer_page.build().get_user_function()
     page = get_page(func.HttpRequest(method="GET", url="/api/app", body=b""))
     assert page.status_code == 200 and b'"/api/app/score"' in page.get_body()
+    from compliance_ai.web import sample_file
+
+    upload = func.HttpRequest(method="POST", url="/api/batch/check", body=sample_file(),
+                              params={"jurisdictions": "EU,IN", "filename": "sample.csv"})
+    resp = fa.batch_check.build().get_user_function()(upload)
+    result = json.loads(resp.get_body())
+    assert resp.status_code == 200 and result["summary"]["invalid"] == 3 and len(result["policies"]) == 2
     status, body = call(fa.drift, "POST", batch)
     assert status == 200 and body["overall"] in {"ok", "watch", "alert"}
     assert call(fa.drift, "POST", {"applicants": batch["applicants"][:5]})[0] == 422

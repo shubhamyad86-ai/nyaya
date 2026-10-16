@@ -50,7 +50,20 @@ Your `.venv` and git history are kept.
 The last box, *Fairness audit only*, is not used by the model. Changing age or sex does not change the
 score; those fields exist so approval rates can be compared across groups.
 
-## 5. What to try in /docs
+## 5. Check a whole file (/batch)
+
+1. Click **Upload a file** at the top of the page, or open **http://127.0.0.1:8000/batch**.
+2. Click **Try the sample** (203 applicants, 3 with mistakes), or drop your own CSV, Excel or PDF.
+   More samples are in `data\samples` (3,000-row CSV, Excel, PDF table, PDF forms).
+3. Keep **EU rules** and **Indian rules** ticked, or untick one, and click **Check file**.
+4. Read the results: the totals at the top, a card per rule set with every check (Pass / Review /
+   Fail) and the law it comes from, the fairness and drift tables, and every applicant with their
+   score, result and action. **Invalid rows** shows what to fix.
+5. **Download** the results as CSV, or print the page and choose "Save as PDF" for a report.
+
+From cmd, the same check: `python scripts\check_csv.py data\samples\applicants_120_table.pdf`
+
+## 6. What to try in /docs
 
 For each endpoint: click it -> **Try it out** -> **Execute** (example inputs are pre-filled).
 
@@ -69,7 +82,7 @@ agent switches to its fixed plan (`"mode": "fixed_plan"`) instead of failing - t
 bigger model (`llama3.2:3b` or larger, or Azure OpenAI) you will see `"mode": "agent"`. To use another
 model, run `set OLLAMA_MODEL=llama3.2:3b` before `start_api.bat`, or edit the line in `start_api.bat`.
 
-## 6. Optional extras
+## 7. Optional extras
 
 **MLflow dashboard** (experiment tracking):
 ```
@@ -92,7 +105,7 @@ python -m compliance_ai.rag.build_index
 python -m compliance_ai.rag.evaluate
 ```
 
-## 7. Put it on GitHub
+## 8. Put it on GitHub
 
 First time only: create an **empty** repository named `compliance-ai` at github.com/new (no README), then:
 ```
@@ -113,7 +126,7 @@ git push -u origin main
 model than someone else's (the four models are within noise of each other), and the documentation
 will still match your files. If you retrain by hand, run that script again before you push.
 
-## 8. Deploy to the cloud (optional)
+## 9. Deploy to the cloud (optional)
 
 - **Azure Functions** (the credit check page and the scoring + drift API on a public URL): run
   `build_azure.bat`, then follow [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md). About 20 minutes; delete
@@ -122,7 +135,7 @@ will still match your files. If you retrain by hand, run that script again befor
   CLI and run `databricks bundle deploy` in the `databricks` folder; see
   [docs/DATABRICKS.md](docs/DATABRICKS.md). About 15 minutes, no card needed.
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 | You see | Fix |
 |---|---|

@@ -1,13 +1,15 @@
-"""Check a CSV of new loan applicants: score, explain, audit fairness, check drift and flag
-the decisions that the GDPR says need a human.
+"""Check a file of loan applicants from the command line: CSV, Excel or PDF, up to 3,000 rows.
 
     python scripts/check_csv.py path/to/applicants.csv
-    python scripts/check_csv.py path/to/applicants.csv --memos 5   # also write law memos for 5 referrals
+    python scripts/check_csv.py applicants.pdf --jurisdictions EU          # EU rules only
+    python scripts/check_csv.py applicants.xlsx --memos 5                  # + law memos for 5 referrals
 
-The CSV needs the 20 German Credit columns (see data/raw/german_credit.csv). A `credit_risk`
-column is optional; if present (1 = repaid, 0 = defaulted) the report also shows accuracy.
+Same engine as the upload page (http://127.0.0.1:8000/batch): every applicant gets a credit score
+with PASS or FAIL and the main reasons; the batch gets a fairness audit, a drift check and the EU
+and India policy checks. A `credit_risk` column (1 = repaid, 0 = defaulted) is optional; if present,
+the report also shows accuracy.
 
-Writes reports/<name>_scored.csv (one row per applicant) and reports/<name>_report.md.
+Writes reports/<name>_scored.csv, reports/<name>_rows_to_fix.csv (if any) and reports/<name>_report.md.
 """
 from __future__ import annotations
 
@@ -17,119 +19,103 @@ from pathlib import Path
 
 import pandas as pd
 
+from compliance_ai.batch import BatchError, check_file
 from compliance_ai.config import resolve
-from compliance_ai.credit.data import DataValidationError, add_features
-from compliance_ai.credit.fairness import fairness_summary, group_metrics
-from compliance_ai.credit.predict import score
-from compliance_ai.monitoring import MIN_BATCH, check_drift
 
-PROTECTED = {"age_group": "Age (under 25 vs 25+)", "sex": "Sex", "foreign_worker": "Foreign worker"}
+ICON = {"pass": "PASS", "warn": "REVIEW", "fail": "FAIL", "info": "INFO"}
 
 
-def _fmt_reasons(reasons: list[dict]) -> str:
-    return "; ".join(f"{r['feature']}={r['value']} ({r['direction']})" for r in reasons)
+def report_markdown(r: dict) -> str:
+    s = r["summary"]
+    lines = [f"# Applicant check: {r['file']['name']}", "",
+             f"Batch `{r['batch_id']}`, checked {r['checked_at']}. Model **{r['model']['name']}**, "
+             f"pass mark {r['model']['pass_mark']} (credit score = 100 x (1 - P(default))).", "",
+             f"- Applicants in file: {s['rows']:,}",
+             f"- PASS: {s['passed']:,} | FAIL (to human review): {s['failed']:,} | "
+             f"invalid rows: {s['invalid']:,}",
+             f"- Approval rate: {s['approval_rate']:.1%}" if s["approval_rate"] is not None else "", ""]
+    for p in r["policies"]:
+        lines += [f"## {p['name']} rules: {ICON[p['overall']]}", "",
+                  f"PASS -> {p['actions']['PASS']}. FAIL -> {p['actions']['FAIL']}.", "",
+                  "| Result | Check | Finding | Law |", "|---|---|---|---|"]
+        lines += [f"| {ICON[c['status']]} | {c['title']} | {c['finding']} | {c['law']} |"
+                  for c in p["checks"]]
+        for n in p["notices"]:
+            lines += [f"> {n}", ""]
+    lines += ["## Fairness audit", "", "| Attribute | Group | n | Approval rate | Ratio |",
+              "|---|---|---|---|---|"]
+    for a in r["fairness"]:
+        lines += [f"| {a['label']} | {g['group']} | {g['applicants']} | {g['approval_rate']:.0%} | "
+                  f"{g['disparate_impact']} |" for g in a["groups"]]
+    lines += ["", "## Drift", ""]
+    if r["drift"]:
+        lines += [f"**{r['drift']['overall'].upper()}**: {r['drift']['summary']}", ""]
+    else:
+        lines += [f"Skipped: needs at least {r['drift_min_rows']} valid applicants.", ""]
+    if r["accuracy"]:
+        a = r["accuracy"]
+        lines += ["## Accuracy (outcomes found in the file)", "",
+                  f"- Accuracy {a['accuracy']:.1%}, defaulters caught {a['defaulters_caught']:.1%}", ""]
+    return "\n".join(lines)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Score and audit a CSV of loan applicants")
-    parser.add_argument("csv", help="CSV with the German Credit columns")
+    parser = argparse.ArgumentParser(description="Score and audit a file of loan applicants")
+    parser.add_argument("file", help="CSV, Excel (.xlsx) or PDF with the German Credit columns")
+    parser.add_argument("--jurisdictions", default="EU,IN", help="EU, IN or EU,IN (default)")
     parser.add_argument("--memos", type=int, default=0,
                         help="write a GDPR review memo for the first N referred applicants")
     args = parser.parse_args()
 
-    path = Path(args.csv)
-    df = pd.read_csv(path)
-    print(f"Loaded {len(df)} applicants from {path.name}")
-
+    path = Path(args.file)
     try:
-        results = score(df)
-    except DataValidationError as err:
-        print(f"The CSV does not match the expected format: {err}")
+        r = check_file(path.read_bytes(), path.name, args.jurisdictions.split(","))
+    except (BatchError, ValueError) as err:
+        print(f"Could not check {path.name}: {err}")
         return 1
 
-    out = df.copy()
-    out["p_default"] = [r["p_default"] for r in results]
-    out["credit_score"] = [r["credit_score"] for r in results]
-    out["result"] = [r["result"] for r in results]
-    out["decision"] = [r["decision"] for r in results]
-    out["requires_human_review"] = out["decision"] != "approve"
-    out["top_reasons"] = [_fmt_reasons(r["reasons"]) for r in results]
-    threshold = results[0]["threshold"]
-    model = results[0]["model"]
+    rows = []
+    for a in r["applicants"]:
+        row = {"row": a["row"], "reference": a["reference"], "credit_score": a["credit_score"],
+               "result": a["result"], "p_default": a["p_default"],
+               "requires_human_review": a["requires_human_review"],
+               "top_reasons": "; ".join(f"{x['label']}={x['value']} ({x['direction']})"
+                                        for x in a["reasons"])}
+        row.update({f"action_{code}": text for code, text in a["actions"].items()})
+        rows.append(row)
 
-    lines = [f"# Applicant check: {path.name}", "",
-             f"Model: **{model}**, threshold {threshold:.3f} on P(default), so the pass mark is a "
-             f"credit score of {results[0]['pass_mark']}. {len(out)} applicants: "
-             f"{(out['result'] == 'PASS').sum()} PASS, {(out['result'] == 'FAIL').sum()} FAIL.", ""]
-
-    n_ref = int(out["requires_human_review"].sum())
-    lines += ["## Decisions", "",
-              f"- Approved: {len(out) - n_ref} ({(len(out) - n_ref) / len(out):.0%})",
-              f"- Referred or rejected: {n_ref} ({n_ref / len(out):.0%})", "",
-              "Under GDPR Article 22, every referred or rejected applicant is flagged for a human "
-              "reviewer (`requires_human_review = True`), and Articles 13-15 require meaningful "
-              "information about the logic involved, which the `top_reasons` column provides.", ""]
-
-    if "credit_risk" in out.columns:
-        y_default = 1 - out["credit_risk"]
-        predicted = out["requires_human_review"].astype(int)
-        caught = (predicted[y_default == 1] == 1).mean() if (y_default == 1).any() else float("nan")
-        lines += ["## Accuracy (labels found in the CSV)", "",
-                  f"- Accuracy: {(predicted == y_default).mean():.1%}",
-                  f"- Defaulters caught: {caught:.1%}", ""]
-    else:
-        y_default = pd.Series(0, index=out.index)
-
-    feats = add_features(df)
-    lines += ["## Fairness audit", "",
-              "Approval rate per group and the disparate impact ratio (below 0.8 fails the "
-              "four-fifths rule). The model never sees these attributes directly.", "",
-              "| Attribute | Group | n | Approval rate | Disparate impact |", "|---|---|---|---|---|"]
-    verdicts = []
-    for col, label in PROTECTED.items():
-        if col not in feats.columns or feats[col].nunique() < 2:
-            continue
-        table = group_metrics(y_default, out["p_default"], feats[col], threshold)
-        for group, row in table.iterrows():
-            lines.append(f"| {label} | {group} | {int(row.n)} | {row.approval_rate:.0%} | "
-                         f"{row.disparate_impact_ratio:.2f} |")
-        s = fairness_summary(table)
-        small = int(table.n.min()) < 20
-        verdicts.append(f"- {label}: {'passes' if s['passes_four_fifths_rule'] else 'FAILS'} "
-                        f"the four-fifths rule (lowest ratio {s['min_disparate_impact_ratio']:.2f})"
-                        + (f" - caution, smallest group has only {int(table.n.min())} applicants"
-                           if small else ""))
-    lines += ["", *verdicts, ""]
-
-    lines += ["## Drift against the training data", ""]
-    if len(out) >= MIN_BATCH:
-        drift = check_drift(df)
-        lines += [f"**{drift['overall'].upper()}**: {drift['summary']}", "",
-                  "| Feature | PSI | Status |", "|---|---|---|"]
-        lines += [f"| {f['feature']} | {f['psi']:.3f} | {f['status']} |" for f in drift["features"][:8]]
-        lines.append("")
-    else:
-        lines += [f"Skipped: the drift check needs at least {MIN_BATCH} applicants.", ""]
-
+    md = report_markdown(r)
     if args.memos:
         from compliance_ai.review import review
-        lines += ["## Review memos (GDPR)", ""]
-        referred = out[out["requires_human_review"]].head(args.memos)
-        for i, (idx, _) in enumerate(referred.iterrows(), 1):
-            memo = review(df.loc[idx].to_dict())
-            lines += [f"**Applicant row {idx}** ({memo['memo_mode']} memo)", "", memo["memo"], ""]
-            print(f"Memo {i}/{len(referred)} written")
+
+        source = pd.read_csv(path) if path.suffix.lower() == ".csv" else None
+        referred = [a for a in r["applicants"] if a["result"] == "FAIL"][: args.memos]
+        md += "\n## Review memos (GDPR)\n"
+        for a in referred:
+            if source is None:
+                md += "\nMemos are available for CSV files only.\n"
+                break
+            memo = review(source.iloc[a["row"] - 2].drop(labels=["credit_risk"], errors="ignore").to_dict())
+            md += f"\n**Row {a['row']}** ({memo['memo_mode']} memo)\n\n{memo['memo']}\n"
 
     reports = resolve("reports")
     reports.mkdir(exist_ok=True)
-    scored = reports / f"{path.stem}_scored.csv"
-    report = reports / f"{path.stem}_report.md"
-    out.to_csv(scored, index=False)
-    report.write_text("\n".join(lines), encoding="utf-8")
+    pd.DataFrame(rows).to_csv(reports / f"{path.stem}_scored.csv", index=False)
+    if r["invalid_rows"]:
+        pd.DataFrame(r["invalid_rows"]).to_csv(reports / f"{path.stem}_rows_to_fix.csv", index=False)
+    (reports / f"{path.stem}_report.md").write_text(md, encoding="utf-8")
 
-    print(f"\nApproved {len(out) - n_ref}, referred {n_ref} (flagged for human review under GDPR Art. 22)")
-    print(*verdicts, sep="\n")
-    print(f"\nScored applicants: {scored}\nReport:            {report}")
+    s = r["summary"]
+    print(f"{s['rows']:,} applicants: {s['passed']:,} PASS, {s['failed']:,} FAIL (human review), "
+          f"{s['invalid']:,} invalid rows")
+    for p in r["policies"]:
+        n = p["counts"]
+        print(f"{p['name']}: {ICON[p['overall']]} "
+              f"({n['pass']} passed, {n['warn']} to review, {n['fail']} failed)")
+        for c in p["checks"]:
+            if c["status"] in ("warn", "fail"):
+                print(f"  {ICON[c['status']]}: {c['title']} - {c['finding']}")
+    print(f"\nResults: reports/{path.stem}_scored.csv\nReport:  reports/{path.stem}_report.md")
     return 0
 
 

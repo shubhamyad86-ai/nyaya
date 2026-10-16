@@ -15,7 +15,7 @@ license = { text = "MIT" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-compliance_ai = ["web/*.html"]
+compliance_ai = ["web/*.html", "web/*.csv", "policies/*.yaml"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "spark"]

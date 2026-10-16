@@ -84,12 +84,37 @@ def form_options() -> dict:
     return {"sections": sections, "presets": PRESETS}
 
 
-def render_scorer(score_url: str) -> str:
-    """The scorer page with the form options and the scoring URL filled in."""
-    html = resources.files(__package__).joinpath("scorer.html").read_text(encoding="utf-8")
-    # "</" is escaped so no value can close the <script> tag early.
-    def to_js(value) -> str:
-        return json.dumps(value).replace("</", "<\\/")
+def _page(name: str, **values) -> str:
+    html = resources.files(__package__).joinpath(name).read_text(encoding="utf-8")
+    # Values are written as JSON, and "</" is escaped so none can close the <script> tag early.
+    for key, value in values.items():
+        html = html.replace(f"__{key.upper()}__", json.dumps(value).replace("</", "<\\/"))
+    return html
 
-    html = html.replace("__OPTIONS_JSON__", to_js(form_options()))
-    return html.replace("__SCORE_URL__", to_js(score_url))
+
+def _links(html: str, single_url: str, batch_url: str, template_url: str = "") -> str:
+    """Plain href attributes (navigation links), HTML-escaped."""
+    from html import escape
+
+    links = {"SINGLE_URL": single_url, "BATCH_URL": batch_url, "TEMPLATE_URL": template_url}
+    for key, value in links.items():
+        html = html.replace(f"__{key}__", escape(value, quote=True))
+    return html
+
+
+def render_scorer(score_url: str, single_url: str = "/app", batch_url: str = "/batch") -> str:
+    """The one-applicant page with the form options and the scoring URL filled in."""
+    html = _page("scorer.html", options_json=form_options(), score_url=score_url)
+    return _links(html, single_url, batch_url)
+
+
+def render_batch(check_url: str, sample_url: str, template_url: str,
+                 single_url: str = "/app", batch_url: str = "/batch") -> str:
+    """The file upload page."""
+    html = _page("batch.html", check_url=check_url, sample_url=sample_url)
+    return _links(html, single_url, batch_url, template_url)
+
+
+def sample_file() -> bytes:
+    """203 applicants (200 real rows from the data, 3 with deliberate errors) for trying the upload."""
+    return resources.files(__package__).joinpath("sample_applicants.csv").read_bytes()

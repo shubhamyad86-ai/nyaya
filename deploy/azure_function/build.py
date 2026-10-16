@@ -23,8 +23,9 @@ ROOT = HERE.parents[1]
 DIST = ROOT / "dist"
 ZIP_PATH = DIST / "compliance_ai_function.zip"
 
-# Packages the scoring path imports (credit.predict, credit.explain, monitoring).
-RUNTIME_PACKAGES = ["numpy", "pandas", "scipy", "scikit-learn", "shap", "PyYAML", "joblib"]
+# Packages the scoring path imports (credit.predict, credit.explain, monitoring, batch file reading).
+RUNTIME_PACKAGES = ["numpy", "pandas", "scipy", "scikit-learn", "shap", "PyYAML", "joblib",
+                    "pdfplumber", "openpyxl"]
 SUPPORTED_PYTHON = {"3.10", "3.11", "3.12", "3.13", "3.14"}   # Azure Functions on Linux, Flex Consumption
 
 

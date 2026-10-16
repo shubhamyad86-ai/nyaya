@@ -7,7 +7,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from compliance_ai import __version__
@@ -154,6 +154,70 @@ def scorer_page():
     from compliance_ai.web import render_scorer
 
     return HTMLResponse(render_scorer(score_url="/credit/score"))
+
+
+@app.get("/batch", include_in_schema=False)
+def batch_page():
+    """Web page: upload a CSV, Excel or PDF file of applicants and check it against EU and Indian rules."""
+    from fastapi.responses import HTMLResponse
+
+    from compliance_ai.web import render_batch
+
+    return HTMLResponse(render_batch(check_url="/batch/check", sample_url="/batch/sample.csv",
+                                     template_url="/batch/template.csv"))
+
+
+_UPLOAD_DOC = {"requestBody": {"content": {
+    "multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {
+        "file": {"type": "string", "format": "binary",
+                 "description": "CSV, Excel (.xlsx) or PDF with up to 3,000 applicants"}}}},
+    "application/octet-stream": {"schema": {"type": "string", "format": "binary"}},
+}}}
+
+
+@app.post("/batch/check", openapi_extra=_UPLOAD_DOC)
+async def batch_check(request: Request, jurisdictions: str = "EU,IN", filename: str = "upload.csv") -> dict:
+    """Score every applicant in a file (PASS/FAIL, reasons) and check the batch against EU and/or
+    Indian rules (`jurisdictions=EU,IN`). Send the file as multipart form field `file`, or as the raw
+    request body with `?filename=` so the format can be recognised."""
+    from fastapi.concurrency import run_in_threadpool
+
+    from compliance_ai.batch import BatchError, check_file
+
+    if request.headers.get("content-type", "").startswith("multipart/form-data"):
+        form = await request.form()
+        upload = form.get("file")
+        if upload is None or not hasattr(upload, "read"):
+            raise HTTPException(422, "Send the file in a form field called 'file'")
+        data, filename = await upload.read(), upload.filename or filename
+    else:
+        data = await request.body()
+    try:
+        return await run_in_threadpool(check_file, data, filename, jurisdictions.split(","))
+    except (BatchError, ValueError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@app.get("/batch/template.csv", include_in_schema=False)
+def batch_template():
+    from fastapi.responses import Response
+
+    from compliance_ai.batch import template_csv
+
+    return Response(template_csv(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="nyaya_template.csv"'})
+
+
+@app.get("/batch/sample.csv", include_in_schema=False)
+def batch_sample():
+    from fastapi.responses import Response
+
+    from compliance_ai.web import sample_file
+
+    return Response(sample_file(), media_type="text/csv",
+                    headers={"Content-Disposition": 'attachment; filename="sample_applicants.csv"'})
 
 
 @app.get("/credit/options")
