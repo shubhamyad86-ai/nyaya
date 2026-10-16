@@ -1,0 +1,37 @@
+# Databricks Asset Bundle for the Nyaya credit-risk pipeline.
+#
+#   databricks auth login --host https://<your-workspace>.cloud.databricks.com
+#   cd databricks
+#   databricks bundle validate
+#   databricks bundle deploy                     # creates schema, volume, model and jobs (dev target)
+#   databricks bundle run credit_risk_pipeline   # after uploading german_credit.csv to the landing volume
+#
+# See docs/DATABRICKS.md for the full walkthrough.
+bundle:
+  name: nyaya
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog for the tables and the model
+    default: workspace
+  schema:
+    description: Schema for the tables, the landing volume and the model
+    default: nyaya
+
+targets:
+  # Development: names get a dev_<user>_ prefix and schedules stay paused,
+  # so experiments never touch the production tables.
+  dev:
+    mode: development
+    default: true
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: ${workspace.current_user.userName}
+        level: CAN_MANAGE

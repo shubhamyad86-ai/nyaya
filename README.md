@@ -24,6 +24,23 @@
 | credit ROC AUC (XGBoost) | of defaulters caught | DistilBERT macro-F1 | right law article in top 4 |
 <!-- /auto:highlights -->
 
+## Try the credit check
+
+Choose an applicant's details and get a **credit score from 0 to 100**, **PASS or FAIL** against the
+pass mark, and the factors that moved the score most. A FAIL is never an automatic rejection: it sends
+the case to a human underwriter, as GDPR Article 22 requires.
+
+![Credit check page](docs/screenshots/credit_check_fail.png)
+
+Run `start_api.bat` (or `uvicorn compliance_ai.api:app`) and open `http://127.0.0.1:8000/app`. The same
+page is part of the Azure deployment at `/api/app`. Three real applicants from the data are one click
+away: strong, borderline and high risk.
+
+How the score works: credit score = 100 × (1 − probability of default). The pass mark is the approval
+threshold that gave the lowest cost in cross-validation, put on the same scale (currently 77). The cost
+counts a wrongly approved defaulter five times as heavily as a wrongly rejected good customer, which is
+why the bar is high.
+
 ## Why I built this
 
 When a bank lets an algorithm decide who gets a loan, accuracy is only part of the job. Three other
@@ -51,8 +68,10 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Drift monitoring** | Compares new applicants with the training data using the Population Stability Index plus a significance test, so small batches don't raise false alarms. |
 | **Financial sentiment** | Classifies 3,448 expert-labelled news sentences, comparing TF-IDF, frozen MiniLM embeddings and DistilBERT fine-tuned in PyTorch. |
 | **A/B testing** | A champion-vs-challenger experiment for the credit model: power analysis, hash-based random assignment, a sample-ratio check, significance tests with confidence intervals, and a paired comparison on the same applicants. |
+| **Credit check page** | A web form for one applicant: every field from the dataset, a 0-100 score with PASS or FAIL, and the SHAP reasons in plain language. Age, sex and foreign-worker status are collected only for the fairness audit. |
 | **Batch checks** | Scores a CSV of new applicants in one go, flags every decision that needs a human under GDPR Article 22, and audits the batch for fairness and drift. |
-| **Engineering** | FastAPI service, 47 tests with GitHub Actions CI, MLflow tracking, a Databricks pipeline with Delta tables, Docker and an Azure Functions deployment kit. |
+| **Databricks job** | A 5-task scheduled job deployed as code (Asset Bundle): incremental `COPY INTO` ingestion, a data-quality gate, model registration in Unity Catalog with champion/challenger aliases, batch scoring and drift and fairness monitoring. |
+| **Engineering** | FastAPI service, 64 tests with GitHub Actions CI, MLflow tracking, Docker, and an Azure Functions deployment with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords). |
 
 ## How it fits together
 
@@ -73,7 +92,8 @@ flowchart LR
     K --> L
     T --> L
     L --> M["FastAPI service"]
-    E --> O["Azure Function: score and drift"]
+    E --> O["Azure Function: credit check page, score, drift"]
+    B --> P["Databricks job: ingest, quality gate, train, UC champion, score, monitor"]
     N --> O
 ```
 
@@ -143,7 +163,15 @@ mostly predicts "neutral". The transformer was fine-tuned on a free Colab GPU wi
 I also ran the data pipeline on Databricks Free Edition. It writes Unity Catalog Delta tables
 (bronze → silver + quarantine → gold), tracks the models in MLflow and repeats the fairness audit. All
 1,000 rows passed the quality checks, and the under-25 approval gap appeared there too (disparate impact
-0.525), matching the local results. Details are in [docs/DATABRICKS.md](docs/DATABRICKS.md).
+0.525), matching the local results.
+
+For a production setup, `databricks/` defines the whole pipeline as a scheduled five-task job
+(ingest → silver → train → score → monitor), deployed with `databricks bundle deploy`. New CSV files
+are loaded once each, a load with more than 5% broken rows stops the job, a new model is registered in
+Unity Catalog and only replaces the `@champion` if it costs less on the same applicants, and
+monitoring compares each new batch with the exact table version the champion was trained on (Delta
+time travel). A demo job drops a shifted "new month" of applicants so you can watch the drift alert
+fire. Details are in [docs/DATABRICKS.md](docs/DATABRICKS.md).
 
 ### Champion vs challenger A/B test
 
@@ -195,7 +223,8 @@ data", not "no difference". The full results are in `reports/ab_test.md` and in 
 **On Windows**
 
 1. Double-click `setup.bat`. It installs everything, trains the models and runs the tests.
-2. Double-click `start_api.bat`. Your browser opens the interactive API at `http://127.0.0.1:8000/docs`.
+2. Double-click `start_api.bat`. Your browser opens the credit check page at `http://127.0.0.1:8000/app`;
+   all API endpoints are at `http://127.0.0.1:8000/docs`.
 
 Step-by-step help and troubleshooting are in [RUN_GUIDE.md](RUN_GUIDE.md).
 
@@ -217,7 +246,7 @@ python scripts/check_csv.py my_applicants.csv          # score and audit a CSV o
 python scripts/update_docs.py                          # write the results into this README
 pytest -q
 
-uvicorn compliance_ai.api:app --reload                 # http://127.0.0.1:8000/docs
+uvicorn compliance_ai.api:app --reload                 # http://127.0.0.1:8000/app and /docs
 ```
 
 For AI-written answers, install [Ollama](https://ollama.com) and run `ollama pull llama3.2:3b`, or set
@@ -228,7 +257,9 @@ still returns the relevant passages of the law.
 
 | Endpoint | What you get |
 |---|---|
-| `POST /credit/score` | Probability of default, the decision and the top four reasons |
+| `GET /app` | The credit check page |
+| `POST /credit/score` | Probability of default, credit score 0-100, PASS or FAIL, and the top four reasons |
+| `GET /credit/options` | Allowed values for every applicant field |
 | `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
 | `POST /agent/review` | The agent's review, its full tool trace and a citation check |
 | `POST /compliance/ask` | An answer from GDPR or the EU AI Act with checked citations |
@@ -238,10 +269,12 @@ still returns the relevant passages of the law.
 
 **Cloud**
 
-- **Databricks:** import `notebooks/databricks_credit_pipeline.py` into Databricks Free Edition and click
-  Run all. See [docs/DATABRICKS.md](docs/DATABRICKS.md).
+- **Databricks:** `cd databricks && databricks bundle deploy && databricks bundle run credit_risk_pipeline`
+  deploys and runs the production job. For a quick look, import `notebooks/databricks_credit_pipeline.py`
+  and click Run all. See [docs/DATABRICKS.md](docs/DATABRICKS.md).
 - **Azure Functions:** `build_azure.bat` packages the model, and `deploy_azure.sh` deploys and tests it
-  from Azure Cloud Shell. See [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md).
+  from Azure Cloud Shell. After that, **Actions → Deploy to Azure** retrains, tests and redeploys in one
+  click. See [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md).
 - **Docker:** `docker build -t nyaya . && docker run -p 8000:8000 nyaya`
 
 ## Project structure
@@ -256,15 +289,17 @@ src/compliance_ai/
   agent.py       tool-calling review agent with guardrails
   monitoring.py  PSI + chi-square drift checks
   experiment.py  A/B testing: assignment, power analysis, significance tests
+  web/           credit check page (shared by FastAPI and Azure)
   api.py         FastAPI service
-notebooks/       Colab GPU run (sentiment) · Databricks pipeline
+databricks/      Asset Bundle: job and Unity Catalog definitions, five job notebooks, shared rules
+notebooks/       Colab GPU run (sentiment) · Databricks quick-start notebook
 spark/           bronze → silver (+ quarantine) → gold with Delta Lake
-deploy/          Azure Functions app, build and Cloud Shell deploy scripts
+deploy/          Azure Functions app, build and deploy scripts (Cloud Shell and GitHub Actions)
 scripts/         download_data · eda · drift_demo · ab_test · check_csv · compare_retrieval · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
 docs/            model card · Azure guide · Databricks guide
-tests/           47 tests (unit, API, agent, Spark, Azure handlers, A/B statistics)
+tests/           64 tests (unit, API, web page, agent, Spark, Databricks rules, Azure handlers, A/B statistics)
 ```
 
 The full model documentation, including limitations, is in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
@@ -283,7 +318,8 @@ The full model documentation, including limitations, is in [docs/MODEL_CARD.md](
 The credit data is small, old and from one country, so Nyaya demonstrates a method, not a
 production lending model. The law assistant is evaluated on 37 questions, its answers still need human
 review, and nothing here is legal advice. The Azure Functions app is packaged and tested but is not
-running live.
+running live yet, and the Databricks job is validated and unit-tested but has not had its first run in a
+workspace (the single-notebook version has).
 
 ---
 

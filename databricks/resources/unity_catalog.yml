@@ -1,0 +1,25 @@
+# Unity Catalog objects owned by the bundle.
+resources:
+  schemas:
+    nyaya:
+      catalog_name: ${var.catalog}
+      name: ${var.schema}
+      comment: Nyaya credit risk - bronze/silver/gold tables, scores, monitoring and the model
+
+  volumes:
+    landing:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.nyaya.name}
+      name: landing
+      volume_type: MANAGED
+      comment: Drop CSV files of loan applications here; the job loads each file once
+
+  registered_models:
+    credit_risk:
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.nyaya.name}
+      name: nyaya_credit_risk
+      comment: >
+        Probability of default for a loan applicant. Alias @champion is used for scoring;
+        @challenger is the latest trained version. Each version carries its approval threshold
+        and the silver table version it was trained on as tags.

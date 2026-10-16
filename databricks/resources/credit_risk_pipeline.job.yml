@@ -1,0 +1,70 @@
+resources:
+  jobs:
+    credit_risk_pipeline:
+      name: nyaya-credit-risk-pipeline
+      description: >
+        Ingest new loan applications, apply data-quality rules, retrain and register the model when
+        new data arrives (promoted only if it beats the champion), score the batch with @champion,
+        and monitor drift and fairness.
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      queue:
+        enabled: true
+      tags:
+        project: nyaya
+        domain: credit-risk
+
+      # Daily at 06:00 Berlin time. Paused until you unpause it (development mode always pauses it).
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: Europe/Berlin
+        pause_status: PAUSED
+
+      email_notifications:
+        on_failure:
+          - ${workspace.current_user.userName}
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.nyaya.name}
+        - name: landing_volume
+          default: ${resources.volumes.landing.name}
+        - name: model_name
+          default: ${var.catalog}.${resources.schemas.nyaya.name}.${resources.registered_models.credit_risk.name}
+
+      # No cluster settings: the tasks run on serverless compute.
+      tasks:
+        - task_key: ingest
+          description: COPY INTO bronze from the landing volume (each file once)
+          notebook_task:
+            notebook_path: ../notebooks/01_ingest.py
+
+        - task_key: silver
+          description: Data-quality rules, quarantine, features; fails if >5% of a load is invalid
+          depends_on:
+            - task_key: ingest
+          notebook_task:
+            notebook_path: ../notebooks/02_silver.py
+
+        - task_key: train
+          description: Cross-validate, register in Unity Catalog, promote to @champion only if better
+          depends_on:
+            - task_key: silver
+          notebook_task:
+            notebook_path: ../notebooks/03_train_register.py
+
+        - task_key: score
+          description: Score the latest load with @champion; MERGE into credit_scores
+          depends_on:
+            - task_key: train
+          notebook_task:
+            notebook_path: ../notebooks/04_batch_score.py
+
+        - task_key: monitor
+          description: PSI drift against the champion's training data and four-fifths fairness check
+          depends_on:
+            - task_key: score
+          notebook_task:
+            notebook_path: ../notebooks/05_monitor.py

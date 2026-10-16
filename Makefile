@@ -1,7 +1,7 @@
 PY ?= python
 export PYTHONPATH := src
 
-.PHONY: setup data eda train sentiment index index-offline eval drift ab-test docs spark azure-package api test lint all
+.PHONY: setup data eda train sentiment index index-offline eval drift ab-test docs spark azure-package api test lint all dbx-validate dbx-deploy dbx-run
 
 setup:            ## install everything, including semantic embeddings
 	$(PY) -m pip install -r requirements-dev.txt -r requirements-hf.txt -r requirements-nlp.txt
@@ -44,8 +44,17 @@ azure-package:    ## zip for Azure Functions -> dist/ (see docs/AZURE_DEPLOY.md)
 	$(PY) deploy/azure_function/build.py
 	cp deploy/azure_function/deploy_azure.sh dist/
 
-api:
+api:             ## API + credit check page at http://127.0.0.1:8000/app
 	uvicorn compliance_ai.api:app --reload
+
+dbx-validate:    ## Databricks Asset Bundle (needs the Databricks CLI, see docs/DATABRICKS.md)
+	cd databricks && databricks bundle validate
+
+dbx-deploy:
+	cd databricks && databricks bundle deploy
+
+dbx-run:
+	cd databricks && databricks bundle run credit_risk_pipeline
 
 mlflow-ui:
 	mlflow ui --backend-store-uri sqlite:///mlflow.db
@@ -54,6 +63,6 @@ test:
 	pytest -q
 
 lint:
-	ruff check src tests spark scripts deploy notebooks/databricks_credit_pipeline.py
+	ruff check src tests spark scripts deploy databricks notebooks/databricks_credit_pipeline.py
 
 all: data eda train sentiment index eval drift docs test

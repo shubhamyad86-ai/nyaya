@@ -1,0 +1,24 @@
+resources:
+  jobs:
+    simulate_new_month:
+      name: nyaya-demo-simulate-new-month
+      description: >
+        Demo only. Writes a new CSV of applications to the landing volume
+        (scenario = same | young_big_loans | bad_file). Run the pipeline afterwards.
+      tags:
+        project: nyaya
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${resources.schemas.nyaya.name}
+        - name: landing_volume
+          default: ${resources.volumes.landing.name}
+        - name: scenario
+          default: young_big_loans
+        - name: rows
+          default: "300"
+      tasks:
+        - task_key: write_batch
+          notebook_task:
+            notebook_path: ../notebooks/00_simulate_new_month.py

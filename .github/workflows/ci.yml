@@ -29,7 +29,7 @@ jobs:
           pip install -e .
 
       - name: Lint
-        run: ruff check src tests spark scripts deploy notebooks/databricks_credit_pipeline.py
+        run: ruff check src tests spark scripts deploy databricks notebooks/databricks_credit_pipeline.py
 
       - name: Download real data
         run: python scripts/download_data.py

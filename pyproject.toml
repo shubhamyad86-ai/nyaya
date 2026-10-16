@@ -34,8 +34,12 @@ target-version = "py310"
 select = ["E", "F", "I", "B", "UP"]
 ignore = ["E402"]
 
+[tool.ruff.lint.isort]
+known-local-folder = ["common"]      # databricks/notebooks/common.py, imported next to the notebooks
+
 [tool.ruff.lint.per-file-ignores]
 # Databricks provides spark, dbutils and display at runtime.
 "notebooks/*.py" = ["F821"]
+"databricks/notebooks/*.py" = ["F821"]
 # Markdown templates read better unwrapped.
 "scripts/update_docs.py" = ["E501"]

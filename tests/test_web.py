@@ -55,6 +55,14 @@ def test_presets_span_pass_and_fail():
     assert results["Strong"] == "PASS" and results["High risk"] == "FAIL"
 
 
+def test_audit_only_fields_do_not_change_the_score():
+    require(MODEL, "run python -m compliance_ai.credit.train")
+    base = PRESETS["Borderline"]
+    variants = [base, {**base, "age": 20}, {**base, "age": 70, "foreign_worker": "no",
+                                          "personal_status_sex": "female : divorced/separated/married"}]
+    assert len({client.post("/credit/score", json=v).json()["credit_score"] for v in variants}) == 1
+
+
 def test_unknown_category_returns_422(applicant):
     require(MODEL, "run python -m compliance_ai.credit.train")
     assert client.post("/credit/score", json={**applicant, "purpose": "yacht"}).status_code == 422

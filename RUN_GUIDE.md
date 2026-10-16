@@ -34,12 +34,23 @@ Your `.venv` and git history are kept.
 ## 3. Start the app (every time)
 
 1. Make sure Ollama is running if you want AI-written answers (it starts with Windows after install).
-2. Double-click **`start_api.bat`**. The browser opens **http://127.0.0.1:8000/docs** after a few seconds.
+2. Double-click **`start_api.bat`**. The browser opens the **credit check page**
+   (**http://127.0.0.1:8000/app**) after a few seconds. All endpoints are at **http://127.0.0.1:8000/docs**.
 3. Leave the black window open, and **do not click inside it** - Windows "Select" mode pauses the
    server. If the title shows "Select", click it and press **Esc**.
 4. To stop: click the window and press **Ctrl+C**.
 
-## 4. What to try in /docs
+## 4. The credit check page (/app)
+
+1. Click **Strong**, **Borderline** or **High risk** to load a real applicant from the data.
+2. Change any field, for example the loan amount or duration. The score updates by itself.
+3. Read the result: the score out of 100, **PASS** or **FAIL** against the pass mark, the chance of
+   default, and the four factors that moved the score most (orange raises the risk, blue lowers it).
+
+The last box, *Fairness audit only*, is not used by the model. Changing age or sex does not change the
+score; those fields exist so approval rates can be compared across groups.
+
+## 5. What to try in /docs
 
 For each endpoint: click it -> **Try it out** -> **Execute** (example inputs are pre-filled).
 
@@ -58,7 +69,7 @@ agent switches to its fixed plan (`"mode": "fixed_plan"`) instead of failing - t
 bigger model (`llama3.2:3b` or larger, or Azure OpenAI) you will see `"mode": "agent"`. To use another
 model, run `set OLLAMA_MODEL=llama3.2:3b` before `start_api.bat`, or edit the line in `start_api.bat`.
 
-## 5. Optional extras
+## 6. Optional extras
 
 **MLflow dashboard** (experiment tracking):
 ```
@@ -81,7 +92,7 @@ python -m compliance_ai.rag.build_index
 python -m compliance_ai.rag.evaluate
 ```
 
-## 6. Put it on GitHub
+## 7. Put it on GitHub
 
 First time only: create an **empty** repository named `compliance-ai` at github.com/new (no README), then:
 ```
@@ -102,15 +113,16 @@ git push -u origin main
 model than someone else's (the four models are within noise of each other), and the documentation
 will still match your files. If you retrain by hand, run that script again before you push.
 
-## 7. Deploy to the cloud (optional)
+## 8. Deploy to the cloud (optional)
 
-- **Azure Functions** (scoring + drift API on a public URL): run `build_azure.bat`, then follow
-  [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md). About 20 minutes; delete it afterwards with
-  `bash deploy_azure.sh delete`.
-- **Databricks Free Edition** (Delta tables + MLflow): follow [docs/DATABRICKS.md](docs/DATABRICKS.md).
-  About 10 minutes, no card needed.
+- **Azure Functions** (the credit check page and the scoring + drift API on a public URL): run
+  `build_azure.bat`, then follow [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md). About 20 minutes; delete
+  it afterwards with `bash deploy_azure.sh delete`. Later updates: **Actions → Deploy to Azure** on GitHub.
+- **Databricks Free Edition** (scheduled job, Unity Catalog model, monitoring): install the Databricks
+  CLI and run `databricks bundle deploy` in the `databricks` folder; see
+  [docs/DATABRICKS.md](docs/DATABRICKS.md). About 15 minutes, no card needed.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 | You see | Fix |
 |---|---|
