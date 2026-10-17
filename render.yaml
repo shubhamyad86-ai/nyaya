@@ -1,0 +1,12 @@
+# Render Blueprint: Render -> New -> Blueprint -> pick this repository. Free plan, no card.
+# See docs/RENDER.md.
+services:
+  - type: web
+    name: nyaya-credit-check
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true

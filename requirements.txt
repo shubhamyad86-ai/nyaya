@@ -23,3 +23,4 @@ uvicorn[standard]>=0.29
 pdfplumber>=0.11
 openpyxl>=3.1
 python-multipart>=0.0.9
+huggingface_hub>=0.30      # publish the models to the Hugging Face Hub (scripts/publish_to_hub.py)

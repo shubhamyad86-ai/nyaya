@@ -130,11 +130,26 @@ databricks bundle run credit_risk_pipeline
 - **scikit-learn for training.** 1,000 rows fit in memory; Spark does the data engineering. With
   millions of rows, the same steps would train with Spark ML or on a larger single node.
 
-### Status
+### Result of the runs on Databricks Free Edition (17 October 2026)
 
-The bundle passes the Databricks bundle schema (CLI v0.270) and its shared Python logic is
-unit-tested locally; the training and scoring logic was run locally on the real data and gives the
-same results as the Free Edition run below. The job itself still needs its first run in a workspace.
+Deployed with `databricks bundle deploy` (CLI v0.299, `DATABRICKS_BUNDLE_ENGINE=direct`) and run
+from the command line.
+
+| Run | What happened |
+|---|---|
+| 1. `german_credit.csv` (1,000 applicants) | All five tasks succeeded in 3 min 11 s. Model registered in Unity Catalog as version 1 and promoted to `@champion` (first model). |
+| 2. `simulate_new_month`, scenario `young_big_loans` (300 applicants) | Ingest, silver, train and score succeeded. **Monitor raised a drift alert and failed the job by design:** `duration` PSI **1.83**, `amount` PSI **0.27** (alert threshold 0.25). The job owner was emailed. |
+
+The first attempt at run 2 also found a real bug: `COPY INTO` with per-file schema inference read
+`duration` as a different integer type in the new file, and Delta refused to merge the schemas
+(`DELTA_FAILED_TO_MERGE_FIELDS`). Ingest now casts every column to a fixed type, and values that
+cannot be cast become NULL and land in quarantine instead of failing the load.
+
+**Tip for Windows:** if `winget` is missing, download the CLI zip from the
+[releases page](https://github.com/databricks/cli/releases). If `bundle deploy` fails with
+*"openpgp: key expired"* while downloading Terraform, use CLI v0.299+ and
+`set DATABRICKS_BUNDLE_ENGINE=direct`, which deploys without Terraform. If the login was saved
+under a profile name, `set DATABRICKS_CONFIG_PROFILE=<name>`.
 
 ---
 

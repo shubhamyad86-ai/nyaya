@@ -179,7 +179,10 @@ are loaded once each, a load with more than 5% broken rows stops the job, a new 
 Unity Catalog and only replaces the `@champion` if it costs less on the same applicants, and
 monitoring compares each new batch with the exact table version the champion was trained on (Delta
 time travel). A demo job drops a shifted "new month" of applicants so you can watch the drift alert
-fire. Details are in [docs/DATABRICKS.md](docs/DATABRICKS.md).
+fire. I ran both on Databricks Free Edition: the first load trained and registered the champion in
+3 minutes, and the shifted month (younger applicants, longer and bigger loans) tripped the alert on
+`duration` (PSI 1.83) and `amount` (PSI 0.27), which failed the job and emailed me. Details are in
+[docs/DATABRICKS.md](docs/DATABRICKS.md).
 
 ### Champion vs challenger A/B test
 
@@ -283,6 +286,12 @@ still returns the relevant passages of the law.
 - **Databricks:** `cd databricks && databricks bundle deploy && databricks bundle run credit_risk_pipeline`
   deploys and runs the production job. For a quick look, import `notebooks/databricks_credit_pipeline.py`
   and click Run all. See [docs/DATABRICKS.md](docs/DATABRICKS.md).
+- **Hugging Face Hub (model pages):** `python scripts/publish_to_hub.py credit` and, from Colab,
+  `... sentiment` publish both models with model cards built from the results. See
+  [docs/HF_HUB.md](docs/HF_HUB.md).
+- **Render (public demo, free, no card):** `render.yaml` deploys the credit check page and the batch
+  upload from GitHub. See [docs/RENDER.md](docs/RENDER.md). (A Hugging Face Space works the same way,
+  but Docker Spaces now need a paid plan: [docs/HF_SPACE.md](docs/HF_SPACE.md).)
 - **Azure Functions:** `build_azure.bat` packages the model, and `deploy_azure.sh` deploys and tests it
   from Azure Cloud Shell. After that, **Actions → Deploy to Azure** retrains, tests and redeploys in one
   click. See [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md).
@@ -307,11 +316,11 @@ src/compliance_ai/
 databricks/      Asset Bundle: job and Unity Catalog definitions, five job notebooks, shared rules
 notebooks/       Colab GPU run (sentiment) · Databricks quick-start notebook
 spark/           bronze → silver (+ quarantine) → gold with Delta Lake
-deploy/          Azure Functions app, build and deploy scripts (Cloud Shell and GitHub Actions)
+deploy/          Azure Functions app (Cloud Shell, GitHub Actions), Render and Hugging Face Space
 scripts/         download_data · eda · drift_demo · ab_test · check_csv · make_samples · compare_retrieval · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
-docs/            model card · batch check guide · Azure guide · Databricks guide
+docs/            model card · batch check guide · Azure, Hugging Face (Space, Hub) and Databricks guides
 tests/           79 tests (unit, API, web pages, file upload and policies, agent, Spark, Databricks rules, Azure handlers, A/B statistics)
 ```
 
@@ -331,8 +340,7 @@ The full model documentation, including limitations, is in [docs/MODEL_CARD.md](
 The credit data is small, old and from one country, so Nyaya demonstrates a method, not a
 production lending model. The law assistant is evaluated on 37 questions, its answers still need human
 review, and nothing here is legal advice. The Azure Functions app is packaged and tested but is not
-running live yet, and the Databricks job is validated and unit-tested but has not had its first run in a
-workspace (the single-notebook version has).
+running live yet.
 
 ---
 

@@ -91,12 +91,16 @@ def health() -> dict:
         status["rag_index"] = get_assistant().index_meta
     except FileNotFoundError:
         status["rag_index"] = "not built"
+    except ImportError:
+        status["rag_index"] = "not installed"
     try:
         from compliance_ai.nlp.predict import load_model
 
         status["sentiment_model"] = load_model().kind
     except FileNotFoundError:
         status["sentiment_model"] = "not trained"
+    except ImportError:
+        status["sentiment_model"] = "not installed"
     return status
 
 
