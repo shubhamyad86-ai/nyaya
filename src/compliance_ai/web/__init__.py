@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from importlib import resources
 
+from compliance_ai import currency
 from compliance_ai.credit.data import CATEGORIES, NUMERIC_RANGES
 from compliance_ai.credit.predict import FEATURE_LABELS
 
@@ -29,6 +30,7 @@ SECTIONS = [
 ]
 
 # Typical ranges in the training data, shown as hints (validation uses NUMERIC_RANGES).
+# Amounts are in DM here; the page converts them to the chosen currency.
 TYPICAL = {"amount": (250, 18_424), "duration": (4, 72), "age": (19, 75)}
 
 # Real applicants from the dataset, so the page can be tried with one click.
@@ -81,7 +83,12 @@ def form_options() -> dict:
                     field["typical"] = list(TYPICAL[name])
             fields.append(field)
         sections.append({"title": title, "fields": fields})
-    return {"sections": sections, "presets": PRESETS}
+    # Codebook labels that contain DM amounts, rewritten for each currency (the values stay the same).
+    labels = {c["code"]: {v: currency.relabel(v, c["code"]) for opts in CATEGORIES.values() for v in opts
+                          if "DM" in v} for c in currency.all_info()}
+    return {"sections": sections, "presets": PRESETS, "currencies": currency.all_info(),
+            "default_currency": currency.default(), "money_labels": labels,
+            "money_features": sorted(currency.MONEY_FEATURES)}
 
 
 def _page(name: str, **values) -> str:

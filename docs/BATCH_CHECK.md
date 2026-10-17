@@ -21,7 +21,9 @@ the EU or in India has to follow around an automated credit decision.
 | PDF, table | A table whose header row has the column names; it may continue over many pages. |
 | PDF, forms | One application per page (or block) with lines like `amount: 1473`. |
 
-Column names are matched ignoring capitals and spaces, and category values ignoring capitals. An
+Amounts can be in **EUR, INR or DM**: choose it in the **Amounts in** menu (API `?currency=EUR`,
+command line `--currency EUR`). They are converted to DM, the training currency, before scoring; see
+[CURRENCY.md](CURRENCY.md). Column names are matched ignoring capitals and spaces, and category values ignoring capitals. An
 optional `applicant_id` (or `id`, `customer_id`, `reference`, `name`) column is carried through to the
 results. An optional `credit_risk` column (1 = repaid, 0 = defaulted) adds an accuracy section.
 Limits: 3,000 applicants and 15 MB per file. Scanned PDFs (photos of paper) need OCR first.

@@ -30,6 +30,8 @@
   .brand { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
   h1 { margin: 4px 0 6px; font-size: 28px; color: var(--brand); letter-spacing: -.01em; }
   header p { margin: 0 0 16px; color: var(--muted); max-width: 75ch; }
+  #currency { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--field);
+              color: var(--ink); font: inherit; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px;
           margin-bottom: 18px; }
   h2 { font-size: 17px; margin: 0 0 12px; color: var(--brand); }
@@ -129,6 +131,9 @@
     <span class="muted">Check against:</span>
     <label><input type="checkbox" name="j" value="EU" checked> EU rules</label>
     <label><input type="checkbox" name="j" value="IN" checked> Indian rules</label>
+    <label>Amounts in <select id="currency">
+      <option value="EUR">€ EUR</option><option value="INR">₹ INR</option>
+      <option value="DM" selected>DM (as in the training data)</option></select></label>
     <button class="primary" id="run" disabled>Check file</button>
     <span class="small muted">No file? <button class="link" id="sample">Try the sample (203 applicants)</button>
       · <a class="link" href="__TEMPLATE_URL__" download="nyaya_template.csv">Download the CSV template</a></span>
@@ -177,7 +182,8 @@
   </section>
 </div>
 </div>
-<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark). The checks
+<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark; files in EUR
+  or INR are converted). The checks
   show whether the decision process meets each rule; they are not legal advice. ·
   <a href="https://github.com/shubhamyad86-ai/nyaya" style="color:var(--brand)">Source on GitHub</a></footer>
 
@@ -212,6 +218,7 @@ for (const ev of ["dragenter", "dragover"]) $("drop").addEventListener(ev, (e) =
 for (const ev of ["dragleave", "drop"]) $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.remove("over"); });
 $("drop").addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) choose(e.dataTransfer.files[0]); });
 $("sample").addEventListener("click", async () => {
+  $("currency").value = "DM";              // the sample comes from the training data, in DM
   const res = await fetch(SAMPLE_URL);
   choose(new File([await res.blob()], "sample_applicants.csv", { type: "text/csv" }));
   run();
@@ -225,7 +232,7 @@ async function run() {
   $("run").disabled = true;
   $("status").textContent = "Checking… a 3,000-row file takes about half a minute.";
   try {
-    const url = `${CHECK_URL}?jurisdictions=${j.join(",")}&filename=${encodeURIComponent(chosen.name)}`;
+    const url = `${CHECK_URL}?jurisdictions=${j.join(",")}&currency=${$("currency").value}&filename=${encodeURIComponent(chosen.name)}`;
     const res = await fetch(url, { method: "POST", body: chosen, headers: { "Content-Type": "application/octet-stream" } });
     const body = await res.json();
     if (!res.ok) throw new Error(body.detail || body.error || `Error ${res.status}`);
@@ -250,7 +257,8 @@ function render() {
   tiles.append(tile("Applicants in file", fmt(s.rows)), tile("PASS", fmt(s.passed), "pass"),
                tile("FAIL → human review", fmt(s.failed), "fail"), tile("Invalid rows", fmt(s.invalid), s.invalid ? "warn" : ""),
                tile("Approval rate", pct(s.approval_rate)));
-  $("meta").textContent = `${report.file.name} · checked ${new Date(report.checked_at).toLocaleString()} · batch ${report.batch_id} · model ${report.model.name}, pass mark ${report.model.pass_mark} · audit log: ${report.audit_log ? report.audit_log.where : "off"}`;
+  $("meta").textContent = `${report.file.name} · checked ${new Date(report.checked_at).toLocaleString()} · batch ${report.batch_id} · model ${report.model.name}, pass mark ${report.model.pass_mark} · audit log: ${report.audit_log ? report.audit_log.where : "off"}` +
+    (report.currency ? ` · amounts in ${report.currency.code}. ${report.currency.note}` : "");
 
   const packs = $("packs"); packs.innerHTML = "";
   const label = { pass: "Pass", warn: "Review", fail: "Fail", info: "Info" };

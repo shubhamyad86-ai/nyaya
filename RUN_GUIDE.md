@@ -50,6 +50,9 @@ Your `.venv` and git history are kept.
 3. Read the result: the score out of 100, **PASS** or **FAIL** against the pass mark, the chance of
    default, and the four factors that moved the score most (orange raises the risk, blue lowers it).
 
+Use the **Currency** menu to enter amounts in euro, rupees or Deutsche Mark (the training data's
+currency); the score is the same in all three. The rates are in `config.yaml` (docs/CURRENCY.md).
+
 The last box, *Fairness audit only*, is not used by the model. Changing age or sex does not change the
 score; those fields exist so approval rates can be compared across groups.
 
@@ -58,7 +61,8 @@ score; those fields exist so approval rates can be compared across groups.
 1. Click **Upload a file** at the top of the page, or open **http://127.0.0.1:8000/batch**.
 2. Click **Try the sample** (203 applicants, 3 with mistakes), or drop your own CSV, Excel or PDF.
    More samples are in `data\samples` (3,000-row CSV, Excel, PDF table, PDF forms).
-3. Keep **EU rules** and **Indian rules** ticked, or untick one, and click **Check file**.
+3. Keep **EU rules** and **Indian rules** ticked, or untick one, choose the currency of your file's
+   amounts (**Amounts in**: EUR, INR or DM), and click **Check file**.
 4. Read the results: the totals at the top, a card per rule set with every check (Pass / Review /
    Fail) and the law it comes from, the fairness and drift tables, and every applicant with their
    score, result and action. **Invalid rows** shows what to fix.

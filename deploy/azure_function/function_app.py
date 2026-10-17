@@ -70,7 +70,8 @@ def batch_check(req: func.HttpRequest) -> func.HttpResponse:
     jurisdictions = (req.params.get("jurisdictions") or "EU,IN").split(",")
     filename = req.params.get("filename") or "upload.csv"
     try:
-        report = check_file(req.get_body(), filename, jurisdictions)
+        report = check_file(req.get_body(), filename, jurisdictions, True,
+                            req.params.get("currency") or "DM")
     except (BatchError, ValueError) as exc:
         return _error(str(exc), 422)
     return _json(report)

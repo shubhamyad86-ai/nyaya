@@ -35,6 +35,9 @@
   .presets button { border: 1px solid var(--line); background: var(--panel); color: var(--ink);
                     padding: 6px 12px; border-radius: 999px; cursor: pointer; font: inherit; }
   .presets button:hover { border-color: var(--accent); }
+  .currency { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .currency select { width: auto; padding: 5px 8px; }
+  .cur-note { margin: -8px 0 14px; font-size: 12px; color: var(--muted); }
   fieldset { border: 1px solid var(--line); background: var(--panel); border-radius: 12px;
              padding: 16px 18px 6px; margin: 0 0 16px; }
   legend { font-weight: 700; padding: 0 6px; color: var(--brand); }
@@ -107,7 +110,9 @@
 
 <main>
   <form id="form" novalidate>
-    <div class="presets"><span>Try a real applicant:</span></div>
+    <div class="presets"><span>Try a real applicant:</span>
+      <label class="currency" for="currency">Currency <select id="currency"></select></label></div>
+    <p class="cur-note" id="cur-note"></p>
   </form>
 
   <aside aria-live="polite">
@@ -134,7 +139,8 @@
   </aside>
 </main>
 
-<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark).
+<footer>Model trained on the Statlog German Credit data (1,000 applicants, amounts in Deutsche Mark,
+  converted for display).
   A demonstration, not a lending decision. · <a href="https://github.com/shubhamyad86-ai/nyaya">Source on GitHub</a></footer>
 
 <script>
@@ -142,6 +148,18 @@ const OPTIONS = __OPTIONS_JSON__;
 const SCORE_URL = __SCORE_URL__;
 const form = document.getElementById("form");
 const $ = (id) => document.getElementById(id);
+const CUR = Object.fromEntries(OPTIONS.currencies.map((c) => [c.code, c]));
+const MONEY = new Set(OPTIONS.money_features);
+let cur = OPTIONS.default_currency;
+// The model works in DM; the page shows the chosen currency.
+const fromDM = (v) => v / CUR[cur].dm_per_unit;
+const toDM = (v) => v * CUR[cur].dm_per_unit;
+const money = (vDM) => {
+  const v = Math.round(fromDM(vDM)).toLocaleString(cur === "INR" ? "en-IN" : "en-US");
+  return cur === "DM" ? `${v} DM` : `${CUR[cur].symbol}${v}`;
+};
+const label = (value) => (OPTIONS.money_labels[cur] || {})[value] || value;
+const AMOUNT_RANGE = {};
 
 function el(tag, attrs = {}, children = []) {
   const n = document.createElement(tag);
@@ -157,7 +175,7 @@ function buildForm() {
   for (const name of Object.keys(OPTIONS.presets)) {
     const b = el("button", { type: "button", text: name });
     b.addEventListener("click", () => { fill(OPTIONS.presets[name]); scoreNow(); });
-    presets.append(b);
+    presets.insertBefore(b, presets.querySelector(".currency"));
   }
   for (const section of OPTIONS.sections) {
     const audit = section.fields.every((f) => !f.model_input);
@@ -169,24 +187,45 @@ function buildForm() {
       let input;
       if (f.type === "choice") {
         input = el("select", { name: f.name, id: f.name });
-        for (const o of f.options) input.append(el("option", { value: o, text: o }));
+        for (const o of f.options) input.append(el("option", { value: o, text: label(o) }));
       } else {
         input = el("input", { name: f.name, id: f.name, type: "number", min: f.min, max: f.max,
                               step: 1, inputmode: "numeric", required: "" });
       }
-      const label = el("label", { for: f.name }, [el("span", { class: "name", text: f.label }), input]);
-      if (f.typical) label.append(el("span", { class: "hint",
+      const box = el("label", { for: f.name }, [el("span", { class: "name", text: f.label }), input]);
+      if (f.name === "amount") { Object.assign(AMOUNT_RANGE, f); box.append(el("span", { class: "hint", id: "amount-hint" })); }
+      else if (f.typical) box.append(el("span", { class: "hint",
         text: `Typical: ${f.typical[0].toLocaleString()}–${f.typical[1].toLocaleString()}` }));
-      else if (f.type === "number") label.append(el("span", { class: "hint", text: `${f.min}–${f.max}` }));
-      grid.append(label);
+      else if (f.type === "number") box.append(el("span", { class: "hint", text: `${f.min}–${f.max}` }));
+      grid.append(box);
     }
     fs.append(grid);
     form.append(fs);
   }
 }
 
+// Presets are in DM, like the training data.
 function fill(values) {
-  for (const [k, v] of Object.entries(values)) { const i = form.elements[k]; if (i) i.value = v; }
+  for (const [k, v] of Object.entries(values)) {
+    const i = form.elements[k];
+    if (i) i.value = k === "amount" ? Math.round(fromDM(v)) : v;
+  }
+}
+
+function setCurrency(code) {
+  const amount = form.elements.amount;
+  // Whole DM, exactly what the model receives, so the box and the reasons show the same amount.
+  const dm = amount.value === "" ? null : Math.round(toDM(Number(amount.value)));
+  cur = code;
+  const r = AMOUNT_RANGE;
+  amount.min = Math.max(1, Math.ceil(fromDM(r.min)));
+  amount.max = Math.floor(fromDM(r.max));
+  $("amount-hint").textContent = `Typical: ${money(r.typical[0])}–${money(r.typical[1])}`;
+  amount.closest("label").querySelector(".name").textContent = `${r.label} (${CUR[cur].symbol})`;
+  if (dm !== null) amount.value = Math.round(fromDM(dm));
+  for (const sel of form.querySelectorAll("select:not(#currency)"))
+    for (const o of sel.options) o.textContent = label(o.value);
+  $("cur-note").textContent = CUR[cur].note;
 }
 
 function readForm() {
@@ -195,6 +234,8 @@ function readForm() {
     const v = form.elements[f.name].value;
     out[f.name] = f.type === "number" ? Number(v) : v;
   }
+  // The model expects whole DM between the training limits.
+  out.amount = Math.min(AMOUNT_RANGE.max, Math.max(AMOUNT_RANGE.min, Math.round(toDM(out.amount))));
   return out;
 }
 
@@ -237,6 +278,8 @@ function render(r) {
 const YES_NO = new Set(["has_checking_account", "no_savings", "delayed_before"]);
 function showValue(x) {
   if (YES_NO.has(x.feature)) return x.value ? "yes" : "no";
+  if (MONEY.has(x.feature)) return money(x.value);
+  if (typeof x.value === "string") return label(x.value);
   if (typeof x.value === "number" && !Number.isInteger(x.value)) return x.value.toFixed(1);
   return String(x.value);
 }
@@ -262,6 +305,10 @@ async function scoreNow() {
 }
 
 buildForm();
+for (const c of OPTIONS.currencies) $("currency").append(el("option", { value: c.code, text: `${c.symbol} ${c.code}` }));
+$("currency").value = cur;
+setCurrency(cur);
+$("currency").addEventListener("change", (e) => { setCurrency(e.target.value); scoreNow(); });
 fill(OPTIONS.presets["Borderline"]);
 form.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(scoreNow, 250); });
 form.addEventListener("submit", (e) => { e.preventDefault(); scoreNow(); });

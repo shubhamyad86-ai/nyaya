@@ -180,10 +180,12 @@ _UPLOAD_DOC = {"requestBody": {"content": {
 
 
 @app.post("/batch/check", openapi_extra=_UPLOAD_DOC)
-async def batch_check(request: Request, jurisdictions: str = "EU,IN", filename: str = "upload.csv") -> dict:
+async def batch_check(request: Request, jurisdictions: str = "EU,IN", filename: str = "upload.csv",
+                      currency: str = "DM") -> dict:
     """Score every applicant in a file (PASS/FAIL, reasons) and check the batch against EU and/or
-    Indian rules (`jurisdictions=EU,IN`). Send the file as multipart form field `file`, or as the raw
-    request body with `?filename=` so the format can be recognised."""
+    Indian rules (`jurisdictions=EU,IN`). `currency` is the currency of the amount column: EUR, INR
+    or DM (default, as in the training data). Send the file as multipart form field `file`, or as the
+    raw request body with `?filename=` so the format can be recognised."""
     from fastapi.concurrency import run_in_threadpool
 
     from compliance_ai.batch import BatchError, check_file
@@ -197,7 +199,7 @@ async def batch_check(request: Request, jurisdictions: str = "EU,IN", filename: 
     else:
         data = await request.body()
     try:
-        return await run_in_threadpool(check_file, data, filename, jurisdictions.split(","))
+        return await run_in_threadpool(check_file, data, filename, jurisdictions.split(","), True, currency)
     except (BatchError, ValueError) as exc:
         raise HTTPException(422, str(exc)) from exc
     except FileNotFoundError as exc:

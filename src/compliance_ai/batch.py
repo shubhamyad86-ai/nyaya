@@ -151,8 +151,15 @@ def read_table(data: bytes, filename: str) -> pd.DataFrame:
 
 
 # ------------------------------------------------------------------ row validation
-def validate_rows(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Split into (valid applicants with typed values, invalid rows with the reasons)."""
+def validate_rows(df: pd.DataFrame, money: str = "DM") -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split into (valid applicants with typed values, invalid rows with the reasons).
+
+    `money` is the currency of the `amount` column (EUR, INR or DM). Amounts are converted to whole
+    DM, the unit the model was trained on; the limits in error messages are shown in `money`.
+    """
+    from compliance_ai import currency
+
+    money = currency.check(money)
     clean = pd.DataFrame(index=df.index)
     issues = pd.Series([[] for _ in range(len(df))], index=df.index)
 
@@ -167,8 +174,13 @@ def validate_rows(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
             lo, hi = NUMERIC_RANGES[col]
             num = pd.to_numeric(raw.str.replace(",", "", regex=False), errors="coerce")
             flag(raw.notna() & (raw != "") & num.isna(), f"{col} is not a number")
-            flag(num.notna() & ~num.between(lo, hi), f"{col} must be {lo}-{hi}")
-            flag(num.notna() & (num % 1 != 0), f"{col} must be a whole number")
+            if col == "amount" and money != "DM":
+                num = (num * currency.dm_per_unit(money)).round()     # to whole DM for the model
+                flag(num.notna() & ~num.between(lo, hi),
+                     f"amount must be {currency.money(lo, money)}-{currency.money(hi, money)}")
+            else:
+                flag(num.notna() & ~num.between(lo, hi), f"{col} must be {lo}-{hi}")
+                flag(num.notna() & (num % 1 != 0), f"{col} must be a whole number")
             clean[col] = num
         else:
             allowed = CATEGORIES[col]
@@ -231,25 +243,36 @@ def _accuracy(valid: pd.DataFrame, approved: np.ndarray) -> dict | None:
 YES_NO = {"has_checking_account", "no_savings", "delayed_before"}
 
 
-def _show(reason: dict):
-    """Readable reason values: yes/no for flags, one decimal for amounts per month."""
+def _show(reason: dict, money: str = "DM"):
+    """Readable reason values: yes/no for flags, amounts in the file's currency."""
+    from compliance_ai import currency
+
     value = reason["value"]
     if reason["feature"] in YES_NO:
         return "yes" if value else "no"
+    if reason["feature"] in currency.MONEY_FEATURES:
+        return currency.money(value, money)
+    if isinstance(value, str):
+        return currency.relabel(value, money)
     return round(value, 1) if isinstance(value, float) else value
 
 
 def check_file(data: bytes, filename: str, jurisdictions: list[str] | None = None,
-               write_audit_log: bool = True) -> dict:
-    """Read, validate, score and audit a file; return everything the page and the API show."""
+               write_audit_log: bool = True, money: str = "DM") -> dict:
+    """Read, validate, score and audit a file; return everything the page and the API show.
+
+    `money` is the currency of the file's `amount` column: EUR, INR or DM (the training data).
+    """
+    from compliance_ai import currency
     from compliance_ai.credit.predict import load_bundle, score
     from compliance_ai.monitoring import MIN_BATCH, check_drift
     from compliance_ai.policies import evaluate, load_packs, write_audit
 
     packs = load_packs(jurisdictions or ["EU", "IN"])
     started = datetime.now(timezone.utc)
+    money = currency.check(money)
     df = read_table(data, filename)
-    valid, invalid = validate_rows(df)
+    valid, invalid = validate_rows(df, money)
     bundle = load_bundle()
 
     results = score(valid[INPUT_COLUMNS]) if len(valid) else []
@@ -261,7 +284,7 @@ def check_file(data: bytes, filename: str, jurisdictions: list[str] | None = Non
             "row": int(valid.at[i, "row"]), "reference": valid.at[i, "reference"],
             "credit_score": r["credit_score"], "result": r["result"], "p_default": r["p_default"],
             "requires_human_review": r["requires_human_review"],
-            "reasons": [{"label": x["label"], "direction": x["direction"], "value": _show(x)}
+            "reasons": [{"label": x["label"], "direction": x["direction"], "value": _show(x, money)}
                         for x in r["reasons"]],
             "actions": {p.code: p.action(r["result"]) for p in packs},
         })
@@ -277,6 +300,7 @@ def check_file(data: bytes, filename: str, jurisdictions: list[str] | None = Non
         "batch_id": uuid.uuid4().hex[:12],
         "checked_at": started.isoformat(timespec="seconds"),
         "file": {"name": filename, "sha256": hashlib.sha256(data).hexdigest(), "rows": n},
+        "currency": currency.info(money),
         "model": {"name": bundle["model_name"], "trained_at": bundle["trained_at"],
                   "threshold": round(float(bundle["threshold"]), 4),
                   "pass_mark": round(100 * (1 - float(bundle["threshold"])), 1),

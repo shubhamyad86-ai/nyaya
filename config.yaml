@@ -20,6 +20,17 @@ credit:
   report_dir: reports
   mlflow_experiment: credit-risk
 
+# The model learned from amounts in Deutsche Mark (1973-75). The pages and the batch check accept
+# and show EUR, INR or DM; amounts are converted to DM before scoring and back for display.
+# Converted, not inflation-adjusted: see docs/CURRENCY.md.
+currency:
+  default: EUR                   # what the credit check page shows first: EUR, INR or DM
+  per_eur:
+    EUR: 1.0
+    DM: 1.95583                  # fixed legal rate since 1 January 1999 (Council Regulation (EC) No 2866/98)
+    INR: 106.27                  # market rate on 15 October 2026 (ofx.com); update it here when needed
+  inr_rate_date: "2026-10-15"
+
 nlp:
   data_path: data/finance_text/Sentences_75Agree.txt
   labels: [negative, neutral, positive]

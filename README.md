@@ -38,7 +38,8 @@ the case to a human underwriter, as GDPR Article 22 requires.
 
 Try it online at **<https://nyaya-ccnp.onrender.com/app>**, or locally: run `start_api.bat` (or
 `uvicorn compliance_ai.api:app`) and open `http://127.0.0.1:8000/app`. Three real applicants from the
-data are one click away: strong, borderline and high risk.
+data are one click away: strong, borderline and high risk. Amounts can be entered and shown in
+**euro, rupees or Deutsche Mark** (the model's training currency); see [docs/CURRENCY.md](docs/CURRENCY.md).
 
 **Check a whole file.** At [/batch](https://nyaya-ccnp.onrender.com/batch) (locally
 `http://127.0.0.1:8000/batch`), upload a CSV, Excel or PDF with up to
@@ -85,7 +86,7 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Batch checks** | Upload a CSV, Excel or PDF of up to 3,000 applicants. Every row gets a score, PASS/FAIL and the action EU or Indian rules require; bad rows are listed with what to fix; the batch runs 16 policy checks (GDPR, EU AI Act, Consumer Credit Directive, RBI Fair Practices Code, DPDP Act) with an audit log that keeps no personal data. |
 | **Databricks job** | A 5-task scheduled job deployed as code (Asset Bundle): incremental `COPY INTO` ingestion, a data-quality gate, model registration in Unity Catalog with champion/challenger aliases, batch scoring and drift and fairness monitoring. |
 | **Deployment** | Live on Render as a Docker web service built from this repository (the model is trained during the build). Also packaged for Azure Functions with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords), and both models can be published to the Hugging Face Hub with generated model cards. |
-| **Engineering** | FastAPI service, 86 tests with GitHub Actions CI, MLflow tracking, Docker. |
+| **Engineering** | FastAPI service, 92 tests with GitHub Actions CI, MLflow tracking, Docker. |
 
 ## How it fits together
 
@@ -285,7 +286,7 @@ still returns the relevant passages of the law.
 | `GET /credit/options` | Allowed values for every applicant field |
 | `GET /batch` | The file upload page |
 | `GET /batch/template.csv` | An empty file with the right columns |
-| `POST /batch/check` | A CSV, Excel or PDF of up to 3,000 applicants → results per applicant and the EU / India policy checks |
+| `POST /batch/check` | A CSV, Excel or PDF of up to 3,000 applicants → results per applicant and the EU / India policy checks (`?currency=EUR`, `INR` or `DM`) |
 | `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
 | `POST /agent/review` | The agent's review, its full tool trace and a citation check |
 | `POST /compliance/ask` | An answer from GDPR or the EU AI Act with checked citations |
@@ -323,6 +324,7 @@ src/compliance_ai/
   monitoring.py  PSI + chi-square drift checks
   experiment.py  A/B testing: assignment, power analysis, significance tests
   batch.py       read CSV / Excel / PDF, validate rows, score, fairness, drift
+  currency.py    EUR / INR / DM conversion (the model works in DM)
   policies/      EU and India rule packs (YAML) and their automatic checks, audit log
   web/           credit check and upload pages (shared by FastAPI and Azure)
   hub.py         publish models to the Hugging Face Hub with generated model cards
@@ -335,8 +337,8 @@ scripts/         download_data · eda · drift_demo · ab_test · check_csv · m
                  publish_to_hub · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
-docs/            model card · batch check · Render · Hugging Face Hub · Databricks · Azure guides
-tests/           86 tests (unit, API, web pages, file upload and policies, agent, Spark, Databricks rules,
+docs/            model card · batch check · currency · Render · Hugging Face Hub · Databricks · Azure guides
+tests/           92 tests (unit, API, web pages, file upload and policies, currency, agent, Spark, Databricks rules,
                  Azure handlers, A/B statistics, Hub model cards)
 ```
 

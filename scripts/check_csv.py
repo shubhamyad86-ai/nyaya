@@ -3,6 +3,7 @@
     python scripts/check_csv.py path/to/applicants.csv
     python scripts/check_csv.py applicants.pdf --jurisdictions EU          # EU rules only
     python scripts/check_csv.py applicants.xlsx --memos 5                  # + law memos for 5 referrals
+    python scripts/check_csv.py applicants_eur.csv --currency EUR          # amounts in euro (or INR)
 
 Same engine as the upload page (http://127.0.0.1:8000/batch): every applicant gets a credit score
 with PASS or FAIL and the main reasons; the batch gets a fairness audit, a drift check and the EU
@@ -63,13 +64,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Score and audit a file of loan applicants")
     parser.add_argument("file", help="CSV, Excel (.xlsx) or PDF with the German Credit columns")
     parser.add_argument("--jurisdictions", default="EU,IN", help="EU, IN or EU,IN (default)")
+    parser.add_argument("--currency", default="DM",
+                        help="currency of the amount column: EUR, INR or DM (default, as in the data)")
     parser.add_argument("--memos", type=int, default=0,
                         help="write a GDPR review memo for the first N referred applicants")
     args = parser.parse_args()
 
     path = Path(args.file)
     try:
-        r = check_file(path.read_bytes(), path.name, args.jurisdictions.split(","))
+        r = check_file(path.read_bytes(), path.name, args.jurisdictions.split(","), money=args.currency)
     except (BatchError, ValueError) as err:
         print(f"Could not check {path.name}: {err}")
         return 1
