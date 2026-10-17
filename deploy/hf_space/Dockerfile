@@ -4,7 +4,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src COMPLIANCE_AI_ROOT=/app \
-    MPLBACKEND=Agg NYAYA_AUDIT_LOG=/tmp/audit_log.jsonl LLM_PROVIDER=none
+    MPLBACKEND=Agg NYAYA_AUDIT_LOG=/tmp/audit_log.jsonl LLM_PROVIDER=none \
+    GIT_PYTHON_REFRESH=quiet
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

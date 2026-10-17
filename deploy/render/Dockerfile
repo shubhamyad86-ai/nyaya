@@ -4,7 +4,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src COMPLIANCE_AI_ROOT=/app \
-    MPLBACKEND=Agg NYAYA_AUDIT_LOG=/tmp/audit_log.jsonl LLM_PROVIDER=none
+    MPLBACKEND=Agg NYAYA_AUDIT_LOG=/tmp/audit_log.jsonl LLM_PROVIDER=none \
+    GIT_PYTHON_REFRESH=quiet
 
 # Only what the web app and training need (no RAG, LLM or Azure packages): fits the 512 MB free plan.
 COPY deploy/hf_space/requirements.txt requirements.txt

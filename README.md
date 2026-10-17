@@ -14,6 +14,10 @@
 ![Databricks](https://img.shields.io/badge/Databricks-Delta%20Lake-FF3621?logo=databricks&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+**[Live demo](https://nyaya-ccnp.onrender.com/app)** · [Upload a file](https://nyaya-ccnp.onrender.com/batch) · [API](https://nyaya-ccnp.onrender.com/docs)
+
+<sub>Free hosting: the first visit after a quiet period takes up to a minute while the app wakes up.</sub>
+
 </div>
 
 ## Key results
@@ -32,22 +36,23 @@ the case to a human underwriter, as GDPR Article 22 requires.
 
 ![Credit check page](docs/screenshots/credit_check_fail.png)
 
-Run `start_api.bat` (or `uvicorn compliance_ai.api:app`) and open `http://127.0.0.1:8000/app`. The same
-page is part of the Azure deployment at `/api/app`. Three real applicants from the data are one click
-away: strong, borderline and high risk.
+Try it online at **<https://nyaya-ccnp.onrender.com/app>**, or locally: run `start_api.bat` (or
+`uvicorn compliance_ai.api:app`) and open `http://127.0.0.1:8000/app`. Three real applicants from the
+data are one click away: strong, borderline and high risk.
 
-**Check a whole file.** At `http://127.0.0.1:8000/batch`, upload a CSV, Excel or PDF with up to
+**Check a whole file.** At [/batch](https://nyaya-ccnp.onrender.com/batch) (locally
+`http://127.0.0.1:8000/batch`), upload a CSV, Excel or PDF with up to
 3,000 applicants. Each one gets a score, PASS or FAIL and the action the rules require, rows with
 mistakes are listed with what to fix, and the batch is checked against **EU** (GDPR, EU AI Act,
 Consumer Credit Directive) and **Indian** (RBI Fair Practices Code, DPDP Act 2023) rules. A 3,000-row
-file takes about 3 seconds. Details: [docs/BATCH_CHECK.md](docs/BATCH_CHECK.md).
+file takes about 3 seconds on a laptop and longer on the free cloud instance. Details: [docs/BATCH_CHECK.md](docs/BATCH_CHECK.md).
 
 ![Batch check](docs/screenshots/batch_check.png)
 
 How the score works: credit score = 100 × (1 − probability of default). The pass mark is the approval
-threshold that gave the lowest cost in cross-validation, put on the same scale (currently 77). The cost
-counts a wrongly approved defaulter five times as heavily as a wrongly rejected good customer, which is
-why the bar is high.
+threshold that gave the lowest cost in cross-validation, put on the same scale: threshold 0.19 gives a
+pass mark of 81. The cost counts a wrongly approved defaulter five times as heavily as a wrongly
+rejected good customer, which is why the bar is high.
 
 ## Why I built this
 
@@ -79,7 +84,8 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Credit check page** | A web form for one applicant: every field from the dataset, a 0-100 score with PASS or FAIL, and the SHAP reasons in plain language. Age, sex and foreign-worker status are collected only for the fairness audit. |
 | **Batch checks** | Upload a CSV, Excel or PDF of up to 3,000 applicants. Every row gets a score, PASS/FAIL and the action EU or Indian rules require; bad rows are listed with what to fix; the batch runs 16 policy checks (GDPR, EU AI Act, Consumer Credit Directive, RBI Fair Practices Code, DPDP Act) with an audit log that keeps no personal data. |
 | **Databricks job** | A 5-task scheduled job deployed as code (Asset Bundle): incremental `COPY INTO` ingestion, a data-quality gate, model registration in Unity Catalog with champion/challenger aliases, batch scoring and drift and fairness monitoring. |
-| **Engineering** | FastAPI service, 79 tests with GitHub Actions CI, MLflow tracking, Docker, and an Azure Functions deployment with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords). |
+| **Deployment** | Live on Render as a Docker web service built from this repository (the model is trained during the build). Also packaged for Azure Functions with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords), and both models can be published to the Hugging Face Hub with generated model cards. |
+| **Engineering** | FastAPI service, 86 tests with GitHub Actions CI, MLflow tracking, Docker. |
 
 ## How it fits together
 
@@ -100,7 +106,7 @@ flowchart LR
     K --> L
     T --> L
     L --> M["FastAPI service"]
-    E --> O["Azure Function: credit check page, score, drift"]
+    E --> O["Docker web app on Render: credit check page, batch upload, EU and India rules"]
     B --> P["Databricks job: ingest, quality gate, train, UC champion, score, monitor"]
     N --> O
 ```
@@ -193,9 +199,10 @@ ratio mismatch, and compares approval rate, default rate among approvals and cos
 confidence intervals. It also runs both models on every applicant (a paired "shadow" comparison with a
 McNemar test), which needs far fewer applicants because each applicant is their own control.
 
-The main lesson: 100 applicants per arm is far too few. Detecting a 5-point change in approval rate
-needs well over a thousand per arm, so a "not significant" result on a small split means "not enough
-data", not "no difference". The full results are in `reports/ab_test.md` and in MLflow under
+The result was to **keep the champion**: the challenger's difference was not significant (p = 0.42).
+The bigger lesson is that 100 applicants per arm is far too few. Detecting a 5-point change in approval
+rate needs about 1,400 applicants per arm, so a "not significant" result on a small split means "not
+enough data", not "no difference". The full results are in `reports/ab_test.md` and in MLflow under
 `credit-ab-test`.
 
 ## What I learned
@@ -213,7 +220,10 @@ data", not "no difference". The full results are in `reports/ab_test.md` and in 
 - **Small LLMs struggle with tool calling.** Rather than failing, the agent falls back to a fixed,
   auditable plan, and every citation is checked against what was actually retrieved.
 - **The four credit models are within noise of each other.** Which one wins can change with library
-  versions, which is why the README numbers are generated from the results instead of typed by hand.
+  versions. I saw it happen: my laptop picks XGBoost (pass mark 81), while the cloud build, with newer
+  library versions, picks gradient boosting (pass mark 83). Both are within the cross-validation error
+  of each other. That is why the README numbers are generated from the results instead of typed by
+  hand, and why a real deployment should pin the exact versions it was validated with.
 - **I deliberately left out FinBERT.** It was trained on the same PhraseBank data, so testing it here
   would leak training data into the score.
 
@@ -226,7 +236,7 @@ data", not "no difference". The full results are in `reports/ab_test.md` and in 
 | **Chunks follow the structure of the law** | One chunk per article, recital or annex, so every passage carries a precise citation such as `GDPR Article 22`. |
 | **Citations are checked, not trusted** | Each citation in an answer is compared with the retrieved passages, and invented ones are flagged. |
 | **Drift needs significance, not just size** | A feature is flagged only if PSI is large and the chi-square p-value is below 0.01 divided by the number of features. |
-| **Deployment uses the training versions** | The Azure build reads the installed library versions, so the saved model loads exactly as it was trained. |
+| **Deployment uses the training versions** | The cloud image trains the model during its own build, and the Azure package reads the installed library versions, so a saved model is never loaded by different versions of the libraries than it was trained with. |
 | **Graceful fallbacks** | No LLM: the assistant returns the cited passages. Small LLM: the agent uses a fixed plan. No Maven access: Spark writes Parquet. |
 
 ## Try it
@@ -258,10 +268,11 @@ python scripts/make_samples.py                         # sample upload files in 
 python scripts/update_docs.py                          # write the results into this README
 pytest -q
 
-uvicorn compliance_ai.api:app --reload                 # http://127.0.0.1:8000/app and /docs
+uvicorn compliance_ai.api:app                         # http://127.0.0.1:8000/app and /docs
 ```
 
-For AI-written answers, install [Ollama](https://ollama.com) and run `ollama pull llama3.2:3b`, or set
+For AI-written answers, install [Ollama](https://ollama.com) and run `ollama pull llama3.2:1b` (what
+`start_api.bat` uses; `llama3.2:3b` gives better answers if your computer can run it), or set
 `LLM_PROVIDER=azure` in `.env` to use Azure OpenAI (see `.env.example`). Without an LLM, the assistant
 still returns the relevant passages of the law.
 
@@ -273,6 +284,7 @@ still returns the relevant passages of the law.
 | `POST /credit/score` | Probability of default, credit score 0-100, PASS or FAIL, and the top four reasons |
 | `GET /credit/options` | Allowed values for every applicant field |
 | `GET /batch` | The file upload page |
+| `GET /batch/template.csv` | An empty file with the right columns |
 | `POST /batch/check` | A CSV, Excel or PDF of up to 3,000 applicants → results per applicant and the EU / India policy checks |
 | `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
 | `POST /agent/review` | The agent's review, its full tool trace and a citation check |
@@ -289,8 +301,9 @@ still returns the relevant passages of the law.
 - **Hugging Face Hub (model pages):** `python scripts/publish_to_hub.py credit` and, from Colab,
   `... sentiment` publish both models with model cards built from the results. See
   [docs/HF_HUB.md](docs/HF_HUB.md).
-- **Render (public demo, free, no card):** `render.yaml` deploys the credit check page and the batch
-  upload from GitHub. See [docs/RENDER.md](docs/RENDER.md). (A Hugging Face Space works the same way,
+- **Render (live demo, free):** the credit check page and the batch upload run at
+  <https://nyaya-ccnp.onrender.com>, built from `deploy/render/Dockerfile`; every push to `main`
+  redeploys. See [docs/RENDER.md](docs/RENDER.md). (A Hugging Face Space works the same way,
   but Docker Spaces now need a paid plan: [docs/HF_SPACE.md](docs/HF_SPACE.md).)
 - **Azure Functions:** `build_azure.bat` packages the model, and `deploy_azure.sh` deploys and tests it
   from Azure Cloud Shell. After that, **Actions → Deploy to Azure** retrains, tests and redeploys in one
@@ -312,16 +325,19 @@ src/compliance_ai/
   batch.py       read CSV / Excel / PDF, validate rows, score, fairness, drift
   policies/      EU and India rule packs (YAML) and their automatic checks, audit log
   web/           credit check and upload pages (shared by FastAPI and Azure)
+  hub.py         publish models to the Hugging Face Hub with generated model cards
   api.py         FastAPI service
 databricks/      Asset Bundle: job and Unity Catalog definitions, five job notebooks, shared rules
 notebooks/       Colab GPU run (sentiment) · Databricks quick-start notebook
 spark/           bronze → silver (+ quarantine) → gold with Delta Lake
 deploy/          Azure Functions app (Cloud Shell, GitHub Actions), Render and Hugging Face Space
-scripts/         download_data · eda · drift_demo · ab_test · check_csv · make_samples · compare_retrieval · update_docs
+scripts/         download_data · eda · drift_demo · ab_test · check_csv · make_samples · compare_retrieval
+                 publish_to_hub · update_docs
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
-docs/            model card · batch check guide · Azure, Hugging Face (Space, Hub) and Databricks guides
-tests/           79 tests (unit, API, web pages, file upload and policies, agent, Spark, Databricks rules, Azure handlers, A/B statistics)
+docs/            model card · batch check · Render · Hugging Face Hub · Databricks · Azure guides
+tests/           86 tests (unit, API, web pages, file upload and policies, agent, Spark, Databricks rules,
+                 Azure handlers, A/B statistics, Hub model cards)
 ```
 
 The full model documentation, including limitations, is in [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
@@ -339,8 +355,10 @@ The full model documentation, including limitations, is in [docs/MODEL_CARD.md](
 
 The credit data is small, old and from one country, so Nyaya demonstrates a method, not a
 production lending model. The law assistant is evaluated on 37 questions, its answers still need human
-review, and nothing here is legal advice. The Azure Functions app is packaged and tested but is not
-running live yet.
+review, and nothing here is legal advice. The policy checks show whether the decision *process* meets
+each rule; for Indian lenders the model itself would have to be retrained on Indian data in rupees.
+The live demo runs on a free instance: it sleeps when unused and must not receive real customer data.
+The Azure Functions package is built and tested but not deployed.
 
 ---
 

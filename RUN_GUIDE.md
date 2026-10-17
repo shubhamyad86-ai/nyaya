@@ -1,6 +1,7 @@
 # How to run Compliance AI on Windows
 
 This guide assumes Windows 10/11 and Command Prompt. Everything runs on your own laptop; nothing is uploaded.
+The online demo is at <https://nyaya-ccnp.onrender.com/app> (section 9).
 
 ## 1. One-time installs
 
@@ -39,6 +40,8 @@ Your `.venv` and git history are kept.
 3. Leave the black window open, and **do not click inside it** - Windows "Select" mode pauses the
    server. If the title shows "Select", click it and press **Esc**.
 4. To stop: click the window and press **Ctrl+C**.
+5. After you change files (new zip, YAML rules, retraining), stop with **Ctrl+C** and start
+   `start_api.bat` again: the server does not reload by itself.
 
 ## 4. The credit check page (/app)
 
@@ -107,12 +110,12 @@ python -m compliance_ai.rag.evaluate
 
 ## 8. Put it on GitHub
 
-First time only: create an **empty** repository named `compliance-ai` at github.com/new (no README), then:
+First time only: create an **empty** repository named `nyaya` at github.com/new (no README), then:
 ```
 git init
 git config --global user.name "Shubham Yadav"
 git config --global user.email "your-email@example.com"
-git remote add origin https://github.com/shubhamyad86-ai/compliance-ai.git
+git remote add origin https://github.com/shubhamyad86-ai/nyaya.git
 git branch -M main
 ```
 Every time you want to publish changes:
@@ -128,6 +131,12 @@ will still match your files. If you retrain by hand, run that script again befor
 
 ## 9. Deploy to the cloud (optional)
 
+- **Render (live demo, free, no card):** <https://nyaya-ccnp.onrender.com>. It redeploys by itself
+  after every `git push`: watch the build under **Logs** at dashboard.render.com. Setup and details:
+  [docs/RENDER.md](docs/RENDER.md).
+- **Hugging Face Hub** (public model pages with model cards): `hf auth login`, then
+  `python scripts\publish_to_hub.py credit`; the sentiment model from Colab. See
+  [docs/HF_HUB.md](docs/HF_HUB.md).
 - **Azure Functions** (the credit check page and the scoring + drift API on a public URL): run
   `build_azure.bat`, then follow [docs/AZURE_DEPLOY.md](docs/AZURE_DEPLOY.md). About 20 minutes; delete
   it afterwards with `bash deploy_azure.sh delete`. Later updates: **Actions → Deploy to Azure** on GitHub.
@@ -147,4 +156,7 @@ will still match your files. If you retrain by hand, run that script again befor
 | Ollama says the model needs a newer version | Update Ollama from ollama.com/download (your models are kept) |
 | `$env:...` gives an error | That is PowerShell syntax; in Command Prompt use `set NAME=value` |
 | `'git' is not recognized` | Install Git, then open a new Command Prompt |
+| `git push` says "no upstream branch" | Run `git push --set-upstream origin main` once |
+| Server window stuck on "Reloading..." | Close it and run the new `start_api.bat` (it no longer auto-reloads) |
+| Online demo takes a minute to open | Normal: the free instance sleeps after 15 minutes without visitors |
 | Spark tests "skipped" | Normal without Java; GitHub CI runs them |

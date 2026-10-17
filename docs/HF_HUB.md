@@ -42,6 +42,8 @@ you trained with, `metrics.json` and the ROC and SHAP charts.
 The fine-tuned DistilBERT needs a GPU, so it is trained and published from Colab:
 
 1. Open `notebooks/financial_sentiment_colab.ipynb` in Colab (File → Upload notebook, or from GitHub).
+   The notebook downloads the project with `git clone`, so the GitHub repository must be **public**
+   (GitHub → repository → Settings → General → Danger Zone → Change visibility).
 2. **Runtime → Change runtime type → T4 GPU**.
 3. Run sections 1-6 (training and results), then section 7: it asks for the token and publishes.
 

@@ -9,6 +9,7 @@ the EU or in India has to follow around an automated credit decision.
 | Web page | `start_api.bat`, then <http://127.0.0.1:8000/batch> (or **Upload a file** at the top of `/app`) |
 | Command line | `python scripts/check_csv.py applicants.pdf --jurisdictions EU,IN` |
 | API | `POST /batch/check?jurisdictions=EU,IN` with the file as form field `file` |
+| Online | <https://nyaya-ccnp.onrender.com/batch> (free instance, see RENDER.md) |
 | Azure | `https://<app>.azurewebsites.net/api/batch` after deploying (see AZURE_DEPLOY.md) |
 
 ## Files it accepts
