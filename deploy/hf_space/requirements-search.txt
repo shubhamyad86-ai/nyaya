@@ -1,0 +1,8 @@
+# Extra packages for the law search (retrieval only, TF-IDF + FAISS) and the TF-IDF sentiment model.
+# No PyTorch and no LLM client: these stay small enough for the 512 MB free plan.
+langchain-core>=0.3
+langchain-community>=0.3
+langchain-text-splitters>=0.3
+faiss-cpu>=1.8
+beautifulsoup4>=4.12
+lxml>=5.0

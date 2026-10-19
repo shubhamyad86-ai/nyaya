@@ -1,9 +1,14 @@
 # Public demo on Render (free, no card)
 
 Render builds the app from the GitHub repository and gives it a public link. This project runs at
-**<https://nyaya-ccnp.onrender.com/app>** (upload page: `/batch`, API: `/docs`).
+**<https://nyaya-ccnp.onrender.com/app>** (upload page: `/batch`, law search and sentiment: `/explore`, API: `/docs`).
 
-Free plan: 512 MB memory (the app peaks at about 370 MB on a 3,000-applicant upload), no card.
+Free plan: 512 MB memory, no card. With the credit model, the law search index and the sentiment
+model loaded, the app uses about 340 MB, and about 385 MB at the peak of a 3,000-applicant upload.
+
+What runs online is the light version: the law search returns the matching passages without a
+language model (`LLM_PROVIDER=none`), and sentiment uses the TF-IDF model. PyTorch (DistilBERT) and
+an LLM do not fit in 512 MB; they run locally.
 After 15 minutes without visitors the app sleeps; the next visit wakes it in about a minute.
 Hugging Face Spaces now needs a paid plan for apps that run Python, so this project uses Render.
 
@@ -31,14 +36,16 @@ git push
 ## 3. Wait for the build (about 5-10 minutes)
 
 The **Logs** tab shows the packages installing, then `Test ROC AUC ...` from training, then
+`Indexed 1106 chunks`, then `tfidf_baseline: ... macro-F1 0.821`, then
 `Application startup complete`. The status turns **Live**. Open:
 
 | Link | What it is |
 |---|---|
 | `https://<service>.onrender.com/app` | Credit check page |
 | `https://<service>.onrender.com/batch` | Upload CSV / Excel / PDF (up to 3,000 applicants) |
+| `https://<service>.onrender.com/explore` | Law search (GDPR, EU AI Act) and news sentiment |
 | `https://<service>.onrender.com/docs` | API |
-| `https://<service>.onrender.com/health` | Model name and training time |
+| `https://<service>.onrender.com/health` | Which models and the search index are loaded |
 
 Every `git push` deploys again automatically.
 

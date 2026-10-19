@@ -1,7 +1,7 @@
 # How to run Compliance AI on Windows
 
 This guide assumes Windows 10/11 and Command Prompt. Everything runs on your own laptop; nothing is uploaded.
-The online demo is at <https://nyaya-ccnp.onrender.com/app> (section 9).
+The online demo is at <https://nyaya-ccnp.onrender.com/app> (section 10).
 
 ## 1. One-time installs
 
@@ -70,7 +70,18 @@ score; those fields exist so approval rates can be compared across groups.
 
 From cmd, the same check: `python scripts\check_csv.py data\samples\applicants_120_table.pdf`
 
-## 6. What to try in /docs
+## 6. Law search and sentiment (/explore)
+
+Click **Law search & sentiment** at the top of the page, or open **http://127.0.0.1:8000/explore**.
+
+- **Law search:** type a question in the words the law uses ("right to erasure", "decision based
+  solely on automated processing") or click an example. Pick one law to narrow the search. With Ollama
+  running you also get a written answer with citations; without it you get the matching articles.
+- **Sentiment:** one financial news sentence per line, then **Check sentiment**.
+
+The online demo has the same page, without the language model and with the TF-IDF sentiment model.
+
+## 7. What to try in /docs
 
 For each endpoint: click it -> **Try it out** -> **Execute** (example inputs are pre-filled).
 
@@ -89,7 +100,7 @@ agent switches to its fixed plan (`"mode": "fixed_plan"`) instead of failing - t
 bigger model (`llama3.2:3b` or larger, or Azure OpenAI) you will see `"mode": "agent"`. To use another
 model, run `set OLLAMA_MODEL=llama3.2:3b` before `start_api.bat`, or edit the line in `start_api.bat`.
 
-## 7. Optional extras
+## 8. Optional extras
 
 **MLflow dashboard** (experiment tracking):
 ```
@@ -112,7 +123,7 @@ python -m compliance_ai.rag.build_index
 python -m compliance_ai.rag.evaluate
 ```
 
-## 8. Put it on GitHub
+## 9. Put it on GitHub
 
 First time only: create an **empty** repository named `nyaya` at github.com/new (no README), then:
 ```
@@ -133,7 +144,7 @@ git push -u origin main
 model than someone else's (the four models are within noise of each other), and the documentation
 will still match your files. If you retrain by hand, run that script again before you push.
 
-## 9. Deploy to the cloud (optional)
+## 10. Deploy to the cloud (optional)
 
 - **Render (live demo, free, no card):** <https://nyaya-ccnp.onrender.com>. It redeploys by itself
   after every `git push`: watch the build under **Logs** at dashboard.render.com. Setup and details:
@@ -148,7 +159,7 @@ will still match your files. If you retrain by hand, run that script again befor
   CLI and run `databricks bundle deploy` in the `databricks` folder; see
   [docs/DATABRICKS.md](docs/DATABRICKS.md). About 15 minutes, no card needed.
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | You see | Fix |
 |---|---|

@@ -171,6 +171,16 @@ def batch_page():
                                      template_url="/batch/template.csv"))
 
 
+@app.get("/explore", include_in_schema=False)
+def explore_page():
+    """Web page: search the GDPR and the EU AI Act, and check the sentiment of financial news."""
+    from fastapi.responses import HTMLResponse
+
+    from compliance_ai.web import render_explore
+
+    return HTMLResponse(render_explore())
+
+
 _UPLOAD_DOC = {"requestBody": {"content": {
     "multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": {
         "file": {"type": "string", "format": "binary",

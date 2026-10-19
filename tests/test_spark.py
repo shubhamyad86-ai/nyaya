@@ -1,4 +1,5 @@
-"""Spark pipeline tests (Parquet mode, so no Maven download is needed). Skipped without Java."""
+"""Spark pipeline tests (Parquet mode, so no Maven download is needed). Skipped without Java or PySpark."""
+import importlib.util
 import shutil
 
 import pytest
@@ -6,7 +7,9 @@ import pytest
 from compliance_ai.credit.data import add_features
 from tests.conftest import CREDIT_CSV, require
 
-pytestmark = pytest.mark.skipif(shutil.which("java") is None, reason="Java not installed")
+pytestmark = pytest.mark.skipif(
+    shutil.which("java") is None or importlib.util.find_spec("pyspark") is None,
+    reason="Java or PySpark not installed")
 
 
 @pytest.fixture(scope="module")

@@ -14,7 +14,7 @@
 ![Databricks](https://img.shields.io/badge/Databricks-Delta%20Lake-FF3621?logo=databricks&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**[Live demo](https://nyaya-ccnp.onrender.com/app)** · [Upload a file](https://nyaya-ccnp.onrender.com/batch) · [API](https://nyaya-ccnp.onrender.com/docs)
+**[Live demo](https://nyaya-ccnp.onrender.com/app)** · [Upload a file](https://nyaya-ccnp.onrender.com/batch) · [Law search & sentiment](https://nyaya-ccnp.onrender.com/explore) · [API](https://nyaya-ccnp.onrender.com/docs)
 
 <sub>Free hosting: the first visit after a quiet period takes up to a minute while the app wakes up.</sub>
 
@@ -49,6 +49,15 @@ Consumer Credit Directive) and **Indian** (RBI Fair Practices Code, DPDP Act 202
 file takes about 3 seconds on a laptop and longer on the free cloud instance. Details: [docs/BATCH_CHECK.md](docs/BATCH_CHECK.md).
 
 ![Batch check](docs/screenshots/batch_check.png)
+
+**Search the law and check news sentiment.** At [/explore](https://nyaya-ccnp.onrender.com/explore),
+search the GDPR and the EU AI Act (the matching articles come back with their citations) and classify
+financial news sentences as positive, neutral or negative. The online version is the light one:
+TF-IDF search without a language model, and the TF-IDF sentiment model (macro-F1 0.82). Locally,
+with Ollama running, the search also writes a cited answer, and the fine-tuned DistilBERT model
+(0.93) is used when it has been trained.
+
+![Law search and sentiment](docs/screenshots/law_search_sentiment.png)
 
 How the score works: credit score = 100 × (1 − probability of default). The pass mark is the approval
 threshold that gave the lowest cost in cross-validation, put on the same scale: threshold 0.19 gives a
@@ -86,7 +95,7 @@ watches for drift, and looks up the actual law when a case needs review.
 | **Batch checks** | Upload a CSV, Excel or PDF of up to 3,000 applicants. Every row gets a score, PASS/FAIL and the action EU or Indian rules require; bad rows are listed with what to fix; the batch runs 16 policy checks (GDPR, EU AI Act, Consumer Credit Directive, RBI Fair Practices Code, DPDP Act) with an audit log that keeps no personal data. |
 | **Databricks job** | A 5-task scheduled job deployed as code (Asset Bundle): incremental `COPY INTO` ingestion, a data-quality gate, model registration in Unity Catalog with champion/challenger aliases, batch scoring and drift and fairness monitoring. |
 | **Deployment** | Live on Render as a Docker web service built from this repository (the model is trained during the build). Also packaged for Azure Functions with a one-click GitHub Actions deploy (OpenID Connect, no stored passwords), and both models can be published to the Hugging Face Hub with generated model cards. |
-| **Engineering** | FastAPI service, 92 tests with GitHub Actions CI, MLflow tracking, Docker. |
+| **Engineering** | FastAPI service, 96 tests with GitHub Actions CI, MLflow tracking, Docker. |
 
 ## How it fits together
 
@@ -285,6 +294,7 @@ still returns the relevant passages of the law.
 | `POST /credit/score` | Probability of default, credit score 0-100, PASS or FAIL, and the top four reasons |
 | `GET /credit/options` | Allowed values for every applicant field |
 | `GET /batch` | The file upload page |
+| `GET /explore` | The law search and sentiment page |
 | `GET /batch/template.csv` | An empty file with the right columns |
 | `POST /batch/check` | A CSV, Excel or PDF of up to 3,000 applicants → results per applicant and the EU / India policy checks (`?currency=EUR`, `INR` or `DM`) |
 | `POST /credit/review` | Score, relevant law and a reviewer memo, with a flag when a human must review |
@@ -302,7 +312,7 @@ still returns the relevant passages of the law.
 - **Hugging Face Hub (model pages):** `python scripts/publish_to_hub.py credit` and, from Colab,
   `... sentiment` publish both models with model cards built from the results. See
   [docs/HF_HUB.md](docs/HF_HUB.md).
-- **Render (live demo, free):** the credit check page and the batch upload run at
+- **Render (live demo, free):** the credit check page, the batch upload and the light law search and sentiment page run at
   <https://nyaya-ccnp.onrender.com>, built from `deploy/render/Dockerfile`; every push to `main`
   redeploys. See [docs/RENDER.md](docs/RENDER.md). (A Hugging Face Space works the same way,
   but Docker Spaces now need a paid plan: [docs/HF_SPACE.md](docs/HF_SPACE.md).)
@@ -338,7 +348,7 @@ scripts/         download_data · eda · drift_demo · ab_test · check_csv · m
 eval/            37 hand-labelled questions for retrieval evaluation
 reports/         metrics, plots, drift report
 docs/            model card · batch check · currency · Render · Hugging Face Hub · Databricks · Azure guides
-tests/           92 tests (unit, API, web pages, file upload and policies, currency, agent, Spark, Databricks rules,
+tests/           96 tests (unit, API, web pages, file upload and policies, currency, agent, Spark, Databricks rules,
                  Azure handlers, A/B statistics, Hub model cards)
 ```
 

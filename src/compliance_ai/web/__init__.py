@@ -99,27 +99,43 @@ def _page(name: str, **values) -> str:
     return html
 
 
-def _links(html: str, single_url: str, batch_url: str, template_url: str = "") -> str:
-    """Plain href attributes (navigation links), HTML-escaped."""
+def _links(html: str, single_url: str, batch_url: str, template_url: str = "",
+           explore_url: str = "") -> str:
+    """Plain href attributes (navigation links), HTML-escaped.
+
+    The law search tab is only shown where the search exists (not on the Azure Function).
+    """
     from html import escape
 
-    links = {"SINGLE_URL": single_url, "BATCH_URL": batch_url, "TEMPLATE_URL": template_url}
+    tab = (f'<a href="{escape(explore_url, quote=True)}">Law search &amp; sentiment</a>'
+           if explore_url else "")
+    html = html.replace("__EXPLORE_TAB__", tab)
+    links = {"SINGLE_URL": single_url, "BATCH_URL": batch_url, "TEMPLATE_URL": template_url,
+             "EXPLORE_URL": explore_url}
     for key, value in links.items():
         html = html.replace(f"__{key}__", escape(value, quote=True))
     return html
 
 
-def render_scorer(score_url: str, single_url: str = "/app", batch_url: str = "/batch") -> str:
+def render_scorer(score_url: str, single_url: str = "/app", batch_url: str = "/batch",
+                  explore_url: str = "/explore") -> str:
     """The one-applicant page with the form options and the scoring URL filled in."""
     html = _page("scorer.html", options_json=form_options(), score_url=score_url)
-    return _links(html, single_url, batch_url)
+    return _links(html, single_url, batch_url, explore_url=explore_url)
 
 
 def render_batch(check_url: str, sample_url: str, template_url: str,
-                 single_url: str = "/app", batch_url: str = "/batch") -> str:
+                 single_url: str = "/app", batch_url: str = "/batch", explore_url: str = "/explore") -> str:
     """The file upload page."""
     html = _page("batch.html", check_url=check_url, sample_url=sample_url)
-    return _links(html, single_url, batch_url, template_url)
+    return _links(html, single_url, batch_url, template_url, explore_url)
+
+
+def render_explore(ask_url: str = "/compliance/ask", sentiment_url: str = "/nlp/sentiment",
+                   single_url: str = "/app", batch_url: str = "/batch", explore_url: str = "/explore") -> str:
+    """The law search and news sentiment page."""
+    html = _page("explore.html", ask_url=ask_url, sentiment_url=sentiment_url)
+    return _links(html, single_url, batch_url, explore_url=explore_url)
 
 
 def sample_file() -> bytes:

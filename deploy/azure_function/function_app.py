@@ -46,7 +46,8 @@ def health(req: func.HttpRequest) -> func.HttpResponse:
 def scorer_page(req: func.HttpRequest) -> func.HttpResponse:
     from compliance_ai.web import render_scorer
 
-    return _page(render_scorer(score_url="/api/app/score", single_url="/api/app", batch_url="/api/batch"))
+    return _page(render_scorer(score_url="/api/app/score", single_url="/api/app", batch_url="/api/batch",
+                               explore_url=""))
 
 
 def _page(html: str) -> func.HttpResponse:
@@ -59,7 +60,7 @@ def batch_page(req: func.HttpRequest) -> func.HttpResponse:
 
     return _page(render_batch(check_url="/api/batch/check", sample_url="/api/batch/sample",
                               template_url="/api/batch/template", single_url="/api/app",
-                              batch_url="/api/batch"))
+                              batch_url="/api/batch", explore_url=""))
 
 
 @app.route(route="batch/check", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)

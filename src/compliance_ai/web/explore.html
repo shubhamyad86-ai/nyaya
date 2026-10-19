@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyaya Law Search</title>
+<style>
+  :root {
+    --bg: #F5F3EE; --panel: #FFFFFF; --ink: #17213A; --muted: #5D6478; --line: #E2DFD6;
+    --brand: #1B2A4A; --accent: #D9731A; --pass: #1E7A4C; --pass-bg: #E5F3EA;
+    --fail: #B3261E; --fail-bg: #FBE9E7; --info: #3B5B8C; --info-bg: #E8EEF8; --field: #FBFAF7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10141F; --panel: #181E2C; --ink: #E8EAF0; --muted: #9AA1B4; --line: #2A3245;
+      --brand: #C9D4F0; --accent: #F0954A; --pass: #5CC98E; --pass-bg: #163325;
+      --fail: #F2887F; --fail-bg: #3A1D1B; --info: #9CB8E8; --info-bg: #1C2840; --field: #121827;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  header { padding-top: 22px; }
+  nav { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+  nav a { padding: 6px 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 14px; }
+  nav a.on { background: var(--panel); color: var(--brand); font-weight: 600; border: 1px solid var(--line); }
+  .brand { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  h1 { margin: 4px 0 6px; font-size: 28px; color: var(--brand); letter-spacing: -.01em; }
+  header p { margin: 0 0 16px; color: var(--muted); max-width: 75ch; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  h2 { font-size: 17px; margin: 0 0 4px; color: var(--brand); }
+  .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  textarea, input, select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px;
+                            background: var(--field); color: var(--ink); font: inherit; }
+  textarea { resize: vertical; min-height: 96px; }
+  textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  .row select { flex: 0 0 150px; }
+  button { padding: 9px 16px; border: 0; border-radius: 8px; background: var(--brand); color: var(--panel);
+           font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+  .chips button { background: var(--field); color: var(--ink); border: 1px solid var(--line); font-weight: 400;
+                  font-size: 13px; padding: 4px 10px; }
+  .results { margin-top: 16px; }
+  .hit { border-top: 1px solid var(--line); padding: 10px 0; }
+  .hit .head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .cite { font-weight: 700; color: var(--brand); }
+  .cite a { color: inherit; }
+  .score { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .title { font-size: 13px; color: var(--muted); }
+  .excerpt { margin: 4px 0 0; font-size: 14px; }
+  .answer { background: var(--info-bg); border-radius: 10px; padding: 12px; font-size: 14px; white-space: pre-wrap; }
+  .sent { border-top: 1px solid var(--line); padding: 10px 0; }
+  .sent .text { font-size: 14px; }
+  .label { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+           padding: 2px 8px; border-radius: 6px; margin-right: 6px; }
+  .label.positive { color: var(--pass); background: var(--pass-bg); }
+  .label.negative { color: var(--fail); background: var(--fail-bg); }
+  .label.neutral { color: var(--info); background: var(--info-bg); }
+  .bars { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; background: var(--line); }
+  .bars i.negative { background: var(--fail); } .bars i.neutral { background: var(--info); }
+  .bars i.positive { background: var(--pass); }
+  .meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .note { margin-top: 16px; padding: 12px; border-radius: 10px; background: var(--field);
+          border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .note strong { color: var(--ink); }
+  .error { color: var(--fail); font-weight: 600; }
+  footer { padding: 20px 0 32px; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--brand); }
+  @media (max-width: 900px) {
+    .wrap { padding: 0 16px; }
+    main { grid-template-columns: 1fr; }
+    .row { flex-wrap: wrap; } .row select { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <nav><a href="__SINGLE_URL__">One applicant</a><a href="__BATCH_URL__">Upload a file</a><a class="on" href="__EXPLORE_URL__">Law search &amp; sentiment</a></nav>
+  <div class="brand">Nyaya · explainable credit risk</div>
+  <h1>Law search and news sentiment</h1>
+  <p>Two smaller parts of the project. The law search finds the articles of the GDPR and the EU AI Act
+     that match a question. The sentiment check reads financial news sentences and says whether they are
+     good, bad or neutral news for an investor.</p>
+</header>
+
+<main>
+  <section class="card" aria-labelledby="law-h">
+    <h2 id="law-h">Search the GDPR and the EU AI Act</h2>
+    <p class="sub">Ask in the words the law uses. The search matches words, not meaning, so
+       "automated decision" finds Article 22 better than "can a computer say no".</p>
+    <form id="law-form">
+      <label for="question" class="sub" style="display:block;margin:0 0 4px">Question</label>
+      <textarea id="question" maxlength="500" required minlength="5"
+        placeholder="e.g. right not to be subject to a decision based solely on automated processing"></textarea>
+      <div class="row">
+        <select id="regulation" aria-label="Which law">
+          <option value="">Both laws</option><option>GDPR</option><option>EU AI Act</option>
+        </select>
+        <button type="submit" id="ask">Search</button>
+      </div>
+    </form>
+    <div class="chips" id="law-examples"></div>
+    <div class="results" id="law-results" aria-live="polite"></div>
+    <div class="note"><strong>How it works.</strong> Both laws are split into 1,106 passages and
+      indexed with TF-IDF and FAISS. On 37 questions with known answers, the right article is among the
+      top 4 results 81% of the time (89% when you pick one law). With a language model running locally
+      (Ollama), the same search also writes an answer that cites these passages; the free online demo has no
+      language model, so it shows the passages only. This is a search aid, not legal advice.</div>
+  </section>
+
+  <section class="card" aria-labelledby="sent-h">
+    <h2 id="sent-h">Financial news sentiment</h2>
+    <p class="sub">One sentence per line, up to 64. English news style works best.</p>
+    <form id="sent-form">
+      <label for="sentences" class="sub" style="display:block;margin:0 0 4px">Sentences</label>
+      <textarea id="sentences" required rows="5"></textarea>
+      <div class="row"><button type="submit" id="classify">Check sentiment</button></div>
+    </form>
+    <div class="results" id="sent-results" aria-live="polite"></div>
+    <div class="note"><strong>The model.</strong> TF-IDF word pairs with logistic regression, trained on
+      3,448 sentences of the Financial PhraseBank (75% annotator agreement). On the 690 held-out sentences it
+      reaches macro-F1 0.82. The fine-tuned DistilBERT model in the project reaches 0.93, but needs PyTorch
+      and more memory than the free online server has, so it runs on a laptop or Colab only.</div>
+  </section>
+</main>
+
+<footer>Source code and the full evaluation:
+  <a href="https://github.com/shubhamyad86-ai/nyaya">github.com/shubhamyad86-ai/nyaya</a> ·
+  all endpoints in the <a href="docs">API docs</a>.</footer>
+</div>
+
+<script>
+const ASK_URL = __ASK_URL__;
+const SENTIMENT_URL = __SENTIMENT_URL__;
+const LAW_LINKS = {
+  "GDPR": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+  "EU AI Act": "https://eur-lex.europa.eu/eli/reg/2024/1689/oj",
+};
+const EXAMPLES = [
+  ["decision based solely on automated processing", ""],
+  ["data breach notification within 72 hours", "GDPR"],
+  ["right to erasure", "GDPR"],
+  ["high-risk AI systems creditworthiness", "EU AI Act"],
+  ["transparency obligations for providers", "EU AI Act"],
+];
+const SENTENCES = [
+  "Operating profit rose to EUR 13.1 mn from EUR 8.7 mn a year earlier.",
+  "The company said it will cut 120 jobs as demand for its products fell sharply.",
+  "The annual general meeting will be held in Helsinki on 15 March.",
+].join("\n");
+
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs = {}, ...kids) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v; else node.setAttribute(k, v);
+  }
+  for (const kid of kids) node.append(kid);
+  return node;
+}
+
+async function post(url, body) {
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+                                 body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = Array.isArray(data.detail) ? data.detail.map((d) => d.msg).join("; ") : data.detail;
+    throw new Error(detail || `The server answered ${res.status}.`);
+  }
+  return data;
+}
+
+function lawOf(citation) {
+  return citation.startsWith("EU AI Act") ? "EU AI Act" : "GDPR";
+}
+
+function showPassages(data) {
+  const box = $("law-results");
+  box.replaceChildren();
+  if (data.mode === "llm") {
+    box.append(el("h2", {}, "Answer"), el("div", { class: "answer" }, data.answer));
+    if (data.unsupported_citations && data.unsupported_citations.length) {
+      box.append(el("p", { class: "error" },
+        "Cited but not found in the passages: " + data.unsupported_citations.join(", ")));
+    }
+  }
+  // The index stores long articles as several passages; show each article once, best match first.
+  const seen = new Set();
+  const hits = data.sources.filter((s) => !seen.has(s.citation) && seen.add(s.citation));
+  box.append(el("h2", {}, hits.length ? "Matching passages" : "Nothing matched"));
+  for (const s of hits) {
+    const text = s.excerpt.includes("\n") ? s.excerpt.slice(s.excerpt.indexOf("\n") + 1) : s.excerpt;
+    box.append(el("div", { class: "hit" },
+      el("div", { class: "head" },
+        el("span", { class: "cite" },
+          el("a", { href: LAW_LINKS[lawOf(s.citation)], target: "_blank", rel: "noopener" }, s.citation)),
+        el("span", { class: "score", title: "Cosine similarity of the TF-IDF vectors" },
+           "match " + s.score.toFixed(2))),
+      s.title ? el("div", { class: "title" }, s.title) : "",
+      el("p", { class: "excerpt" }, text.trim() + "…")));
+  }
+}
+
+async function search() {
+  const question = $("question").value.trim();
+  if (question.length < 5) { $("law-results").replaceChildren(el("p", { class: "error" },
+    "Please type at least 5 characters.")); return; }
+  $("ask").disabled = true;
+  $("law-results").replaceChildren(el("p", { class: "meta" }, "Searching…"));
+  try {
+    const body = { question };
+    if ($("regulation").value) body.regulation = $("regulation").value;
+    showPassages(await post(ASK_URL, body));
+  } catch (err) {
+    $("law-results").replaceChildren(el("p", { class: "error" }, err.message));
+  } finally {
+    $("ask").disabled = false;
+  }
+}
+
+function showSentiment(rows) {
+  const box = $("sent-results");
+  box.replaceChildren();
+  for (const r of rows) {
+    const bars = el("div", { class: "bars", "aria-hidden": "true" });
+    for (const [label, p] of Object.entries(r.scores)) {
+      bars.append(el("i", { class: label, style: `width:${(p * 100).toFixed(1)}%` }));
+    }
+    box.append(el("div", { class: "sent" },
+      el("div", { class: "text" }, el("span", { class: "label " + r.label }, r.label), r.text),
+      bars,
+      el("div", { class: "meta" }, Object.entries(r.scores)
+        .map(([label, p]) => `${label} ${Math.round(p * 100)}%`).join(" · "))));
+  }
+  if (rows.length) box.append(el("p", { class: "meta" }, "Model: " + rows[0].model));
+}
+
+async function classify() {
+  const sentences = $("sentences").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  if (!sentences.length) return;
+  if (sentences.length > 64) {
+    $("sent-results").replaceChildren(el("p", { class: "error" }, "Up to 64 sentences at a time, please."));
+    return;
+  }
+  $("classify").disabled = true;
+  try {
+    showSentiment(await post(SENTIMENT_URL, { sentences }));
+  } catch (err) {
+    $("sent-results").replaceChildren(el("p", { class: "error" }, err.message));
+  } finally {
+    $("classify").disabled = false;
+  }
+}
+
+for (const [q, reg] of EXAMPLES) {
+  const chip = el("button", { type: "button" }, q);
+  chip.addEventListener("click", () => { $("question").value = q; $("regulation").value = reg; search(); });
+  $("law-examples").append(chip);
+}
+$("sentences").value = SENTENCES;
+$("law-form").addEventListener("submit", (e) => { e.preventDefault(); search(); });
+$("sent-form").addEventListener("submit", (e) => { e.preventDefault(); classify(); });
+</script>
+</body>
+</html>
